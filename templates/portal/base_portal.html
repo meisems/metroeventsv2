@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>{% block title %}Client Portal{% endblock %} — {{ APP_NAME }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --canvas:#faf8f4;--surface:#fff;--overlay:#f3efe8;
+      --navy:#161c30;--navy-mid:#1e2640;--navy-lt:#252d4a;
+      --gold:#b8924a;--gold-lt:#d4aa6a;--gold-pale:#f5edd8;
+      --tp:#161c30;--ts:#5a6070;--tm:#9ca3af;
+      --border:#e5dfd2;--border-s:#c9bfa8;
+      --success:#2d7d52;--success-pale:#eaf5ee;--success-border:rgba(45,125,82,.25);
+      --danger:#b84a4a;--danger-pale:#fdf0f0;--danger-border:rgba(184,74,74,.25);
+      --warn:#b87a1a;--warn-pale:#fdf4e6;--warn-border:rgba(184,122,26,.25);
+      --sh-xs:0 1px 2px rgba(22,28,48,.04);
+      --sh-sm:0 2px 8px rgba(22,28,48,.06),0 1px 2px rgba(22,28,48,.03);
+      --sh-md:0 4px 16px rgba(22,28,48,.09),0 2px 4px rgba(22,28,48,.05);
+      --sh-lg:0 12px 40px rgba(22,28,48,.13),0 4px 8px rgba(22,28,48,.06);
+      --r-xs:4px;--r-sm:6px;--r-md:10px;--r-lg:16px;--r-xl:20px;--r-full:9999px;
+      --t-fast:110ms ease;--t-base:200ms ease;--t-slow:360ms ease;
+      --sidebar-w:256px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--tp);-webkit-font-smoothing:antialiased;}
+    .disp{font-family:'Cormorant Garamond',serif;}
+    input,select,textarea,button{font-family:'DM Sans',sans-serif;}
+    a{text-decoration:none;color:inherit;}
+    ::-webkit-scrollbar{width:5px;}
+    ::-webkit-scrollbar-track{background:var(--canvas);}
+    ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:99px;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .fade-up{animation:fadeUp .45s ease both;}
+
+    /* ── Portal shell ─────────────────────────────────── */
+    .portal-wrap{display:flex;min-height:100vh;}
+
+    /* ── Sidebar ──────────────────────────────────────── */
+    .sidebar{
+      width:var(--sidebar-w);flex-shrink:0;
+      background:var(--navy);
+      border-right:1px solid rgba(255,255,255,.07);
+      display:flex;flex-direction:column;
+      position:fixed;top:0;left:0;height:100vh;
+      overflow-y:auto;z-index:100;
+    }
+    .sb-top{padding:22px 20px 18px;}
+    .sb-brand{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+    .sb-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--gold),var(--gold-lt));border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .sb-brand-name{font-size:15px;font-weight:600;color:#f8f4ed;font-family:'Cormorant Garamond',serif;letter-spacing:.01em;}
+    .sb-sub{font-size:10px;letter-spacing:.12em;color:rgba(248,244,237,.3);padding-left:44px;margin-top:-2px;}
+    .sb-div{height:1px;background:rgba(255,255,255,.07);margin:0 20px;}
+
+    .sb-user{padding:16px 20px;}
+    .sb-avatar{width:38px;height:38px;background:var(--navy-lt);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--gold-lt);flex-shrink:0;margin-bottom:10px;}
+    .sb-uname{font-size:13px;font-weight:600;color:#f0ece4;line-height:1.3;}
+    .sb-uemail{font-size:11px;color:rgba(248,244,237,.38);margin-top:1px;word-break:break-all;}
+
+    .sb-nav{padding:14px 12px;flex:1;}
+    .sb-nav-label{font-size:10px;letter-spacing:.12em;color:rgba(248,244,237,.28);padding:0 8px;margin-bottom:8px;}
+    .sb-link{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 12px;border-radius:var(--r-md);
+      font-size:13px;font-weight:500;color:rgba(248,244,237,.55);
+      cursor:pointer;transition:all var(--t-base);
+      border:1px solid transparent;margin-bottom:2px;
+      text-decoration:none;
+    }
+    .sb-link:hover{background:rgba(255,255,255,.05);color:rgba(248,244,237,.85);}
+    .sb-link.active{
+      background:rgba(184,146,74,.15);
+      border-color:rgba(184,146,74,.22);
+      color:var(--gold-lt);
+    }
+    .sb-link svg{flex-shrink:0;opacity:.7;}
+    .sb-link.active svg{opacity:1;}
+
+    .sb-bottom{padding:14px 12px 20px;}
+    .sb-logout{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 12px;border-radius:var(--r-md);
+      font-size:13px;font-weight:500;
+      color:rgba(184,74,74,.7);
+      cursor:pointer;transition:all var(--t-base);
+      border:none;background:transparent;width:100%;text-align:left;
+      text-decoration:none;
+    }
+    .sb-logout:hover{background:rgba(184,74,74,.1);color:#c96060;}
+
+    /* ── Main content ─────────────────────────────────── */
+    .portal-main{
+      margin-left:var(--sidebar-w);
+      flex:1;background:var(--canvas);
+      min-height:100vh;
+      padding:40px 44px 60px;
+    }
+    .portal-page-head{margin-bottom:28px;}
+    .portal-page-head h1{font-size:32px;font-weight:600;color:var(--tp);line-height:1.1;}
+    .portal-page-head p{font-size:14px;color:var(--ts);margin-top:5px;}
+
+    /* ── Cards ────────────────────────────────────────── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);}
+    .card+.card{margin-top:16px;}
+
+    /* ── Flash messages ───────────────────────────────── */
+    .flash-wrap{margin-bottom:20px;}
+    .flash{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r-sm);font-size:13px;margin-bottom:8px;}
+    .flash-success{background:var(--success-pale);border:1px solid var(--success-border);color:var(--success);}
+    .flash-danger,.flash-error{background:var(--danger-pale);border:1px solid var(--danger-border);color:var(--danger);}
+    .flash-warning{background:var(--warn-pale);border:1px solid var(--warn-border);color:var(--warn);}
+    .flash-info{background:#eef4fb;border:1px solid rgba(59,110,165,.22);color:#3b6ea5;}
+
+    /* ── Gold button ──────────────────────────────────── */
+    .btn-gold{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:11px 22px;background:linear-gradient(135deg,var(--gold),var(--gold-lt));
+      color:#fff;font-size:13px;font-weight:600;letter-spacing:.03em;
+      border:none;border-radius:var(--r-sm);cursor:pointer;
+      transition:transform var(--t-fast),box-shadow var(--t-base);
+    }
+    .btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(184,146,74,.34);}
+    .btn-ghost{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:10px 20px;background:transparent;
+      color:var(--ts);font-size:13px;font-weight:500;
+      border:1.5px solid var(--border-s);border-radius:var(--r-sm);cursor:pointer;
+      transition:all var(--t-base);
+    }
+    .btn-ghost:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-pale);}
+    .btn-green{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:11px 22px;background:var(--success);
+      color:#fff;font-size:13px;font-weight:600;letter-spacing:.03em;
+      border:none;border-radius:var(--r-sm);cursor:pointer;
+      transition:transform var(--t-fast),box-shadow var(--t-base);
+    }
+    .btn-green:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(45,125,82,.34);}
+
+    /* ── Form fields ──────────────────────────────────── */
+    .field{margin-bottom:18px;}
+    .field label{display:block;font-size:12px;font-weight:600;color:var(--ts);letter-spacing:.04em;margin-bottom:6px;}
+    .field input,.field select,.field textarea{
+      width:100%;padding:11px 14px;
+      background:var(--surface);border:1.5px solid var(--border);
+      border-radius:var(--r-sm);font-size:14px;color:var(--tp);
+      transition:border-color var(--t-base),box-shadow var(--t-base);
+      outline:none;
+    }
+    .field input:focus,.field select:focus,.field textarea:focus{
+      border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,146,74,.12);
+    }
+    .field textarea{resize:vertical;min-height:120px;line-height:1.65;}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+    /* ── Status badge ─────────────────────────────────── */
+    .badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:var(--r-full);font-size:11px;font-weight:600;letter-spacing:.04em;}
+    .badge-gold{background:rgba(184,146,74,.15);border:1px solid rgba(184,146,74,.35);color:var(--gold);}
+    .badge-green{background:var(--success-pale);border:1px solid var(--success-border);color:var(--success);}
+    .badge-muted{background:var(--overlay);border:1px solid var(--border);color:var(--ts);}
+    .badge-warn{background:var(--warn-pale);border:1px solid var(--warn-border);color:var(--warn);}
+
+    /* ── Toggle button group ──────────────────────────── */
+    .toggle-group{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+    .toggle-btn{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:9px 16px;border:1.5px solid var(--border-s);
+      border-radius:var(--r-sm);font-size:13px;font-weight:500;
+      color:var(--ts);cursor:pointer;background:var(--surface);
+      transition:all var(--t-base);
+    }
+    .toggle-btn:hover{border-color:var(--gold);color:var(--gold);}
+    .toggle-btn.active-navy{background:var(--navy);border-color:var(--navy);color:#fff;}
+    .toggle-btn.active-green{background:var(--success-pale);border-color:var(--success);color:var(--success);}
+    .toggle-btn.active-gold{background:var(--gold-pale);border-color:var(--gold);color:var(--gold);}
+
+    /* ── Mobile topbar ────────────────────────────────── */
+    .mob-topbar{
+      display:none;position:fixed;top:0;left:0;right:0;
+      height:56px;background:var(--navy);
+      border-bottom:1px solid rgba(255,255,255,.07);
+      z-index:200;padding:0 18px;
+      align-items:center;justify-content:space-between;
+    }
+    .mob-brand{display:flex;align-items:center;gap:9px;}
+    .mob-brand-name{font-size:15px;font-weight:600;color:#f8f4ed;font-family:'Cormorant Garamond',serif;}
+    .mob-logout{
+      display:flex;align-items:center;gap:6px;
+      background:none;border:1px solid rgba(184,74,74,.35);
+      border-radius:var(--r-sm);padding:6px 12px;
+      color:rgba(184,74,74,.8);font-size:12px;cursor:pointer;
+      text-decoration:none;
+    }
+
+    /* ── Mobile bottom nav ────────────────────────────── */
+    .mob-nav{
+      display:none;position:fixed;bottom:0;left:0;right:0;
+      background:var(--navy);border-top:1px solid rgba(255,255,255,.07);
+      z-index:200;height:60px;padding:0 4px;
+      align-items:center;justify-content:space-around;
+    }
+    .mob-nav-item{
+      display:flex;flex-direction:column;align-items:center;gap:3px;
+      padding:6px 12px;border-radius:var(--r-sm);
+      font-size:10px;color:rgba(248,244,237,.45);
+      text-decoration:none;transition:all var(--t-base);flex:1;
+    }
+    .mob-nav-item.active{color:var(--gold-lt);}
+    .mob-nav-item svg{opacity:.6;}
+    .mob-nav-item.active svg{opacity:1;}
+
+    /* ── Info box ─────────────────────────────────────── */
+    .info-box{
+      display:flex;align-items:flex-start;gap:10px;
+      padding:13px 15px;background:var(--warn-pale);
+      border:1px solid var(--warn-border);border-radius:var(--r-md);
+      font-size:12px;color:var(--warn);line-height:1.65;margin-top:12px;
+    }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media(max-width:768px){
+      .sidebar{display:none;}
+      .portal-main{margin-left:0;padding:76px 18px 80px;}
+      .mob-topbar,.mob-nav{display:flex;}
+      .field-row{grid-template-columns:1fr;}
+      .portal-page-head h1{font-size:24px;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR (desktop) ════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sb-top">
+    <div class="sb-brand">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+      </div>
+      <span class="disp sb-brand-name">{{ APP_NAME }}</span>
+    </div>
+    <div class="sb-sub">CLIENT PORTAL</div>
+  </div>
+  <div class="sb-div"></div>
+
+  <div class="sb-user">
+    <div class="sb-avatar">{{ current_user.name[0].upper() }}</div>
+    <div class="sb-uname">{{ current_user.name }}</div>
+    <div class="sb-uemail">{{ current_user.email }}</div>
+  </div>
+  <div class="sb-div"></div>
+
+  <nav class="sb-nav">
+    <div class="sb-nav-label">NAVIGATION</div>
+    <a href="{{ url_for('portal.home') }}" class="sb-link {% if active_tab=='events' %}active{% endif %}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      My Events
+    </a>
+    <a href="{{ url_for('portal.inquire') }}" class="sb-link {% if active_tab=='inquire' %}active{% endif %}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Inquire
+    </a>
+    <a href="{{ url_for('portal.request_change') }}" class="sb-link {% if active_tab=='change' %}active{% endif %}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Request Change
+    </a>
+    <a href="{{ url_for('portal.review') }}" class="sb-link {% if active_tab=='review' %}active{% endif %}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Review
+    </a>
+    <a href="{{ url_for('portal.profile') }}" class="sb-link {% if active_tab=='profile' %}active{% endif %}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </a>
+  </nav>
+
+  <div class="sb-div"></div>
+  <div class="sb-bottom">
+    <a href="{{ url_for('client_auth.logout') }}" class="sb-logout">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </a>
+  </div>
+</aside>
+
+<!-- ═══ MOBILE TOPBAR ════════════════════════════════════════ -->
+<div class="mob-topbar">
+  <div class="mob-brand">
+    <div class="sb-icon" style="width:28px;height:28px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+    </div>
+    <span class="disp mob-brand-name">{{ APP_NAME }}</span>
+  </div>
+  <a href="{{ url_for('client_auth.logout') }}" class="mob-logout">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    Sign Out
+  </a>
+</div>
+
+<!-- ═══ MAIN CONTENT ══════════════════════════════════════════ -->
+<main class="portal-main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-wrap">
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block portal_content %}{% endblock %}
+</main>
+
+<!-- ═══ MOBILE BOTTOM NAV ══════════════════════════════════════ -->
+<nav class="mob-nav">
+  <a href="{{ url_for('portal.home') }}" class="mob-nav-item {% if active_tab=='events' %}active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Events
+  </a>
+  <a href="{{ url_for('portal.inquire') }}" class="mob-nav-item {% if active_tab=='inquire' %}active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Inquire
+  </a>
+  <a href="{{ url_for('portal.request_change') }}" class="mob-nav-item {% if active_tab=='change' %}active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Change
+  </a>
+  <a href="{{ url_for('portal.review') }}" class="mob-nav-item {% if active_tab=='review' %}active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Review
+  </a>
+  <a href="{{ url_for('portal.profile') }}" class="mob-nav-item {% if active_tab=='profile' %}active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </a>
+</nav>
+
+</body>
+</html>

@@ -1,215 +1,159 @@
-{% extends "base.html" %}
-{% block title %}{{ event.name }} — Client Portal{% endblock %}
-{% block content %}
-<div class="d-flex align-items-center gap-2 mb-3">
-  <a href="{{ url_for('portal.home') }}" class="btn btn-sm btn-outline-secondary">← My Events</a>
-  <h2>{{ event.name }}</h2>
+{% extends "portal/base_portal.html" %}
+{% set active_tab = "events" %}
+{% block title %}{{ event.name }}{% endblock %}
+{% block portal_content %}
+{% set status_map = {'planning':3,'production':3,'ready':2,'event_day':4,'done':4,'cancelled':-1} %}
+{% set pipe_idx = status_map.get(event.status, 3) %}
+{% set pipe_stages = ['Inquiry Received','Proposal Sent','Reserved','In Planning','Completed'] %}
+
+<div class="portal-page-head fade-up">
+  <a href="{{ url_for('portal.home') }}" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--tm);margin-bottom:10px;transition:color var(--t-base);" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--tm)'">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to My Events
+  </a>
+  <h1 class="disp">{{ event.name }}</h1>
+  <p>{{ event.event_date | dateformat }}{% if event.venue_name %} &middot; {{ event.venue_name }}{% endif %}</p>
 </div>
-<p class="text-muted">
-  📅 {{ event.event_date | dateformat }} &nbsp;|&nbsp;
-  📍 {{ event.venue_name or '—' }} &nbsp;|&nbsp;
-  🎨 {{ event.package_name or '—' }}
-</p>
 
-<!-- Nav tabs -->
-<ul class="nav nav-tabs mb-3" id="portalTabs">
-  <li class="nav-item">
-    <a class="nav-link active" data-bs-toggle="tab" href="#tab-quote">📄 Proposal</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" data-bs-toggle="tab" href="#tab-payments">💰 Payments</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" data-bs-toggle="tab" href="#tab-moodboard">🖼️ Moodboard</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" data-bs-toggle="tab" href="#tab-feedback">⭐ Feedback</a>
-  </li>
-</ul>
-
-<div class="tab-content">
-  <!-- PROPOSAL TAB -->
-  <div class="tab-pane fade show active" id="tab-quote">
-    {% if quote %}
-    <div class="card shadow-sm" style="max-width:700px">
-      <div class="card-header d-flex justify-content-between">
-        <strong>{{ quote.label or 'v' ~ quote.version }} — {{ quote.package_name or '' }}</strong>
-        {% if quote.is_approved %}
-        <span class="badge bg-success">✅ Approved by {{ quote.approved_by }}</span>
-        {% else %}
-        <span class="badge bg-warning">Pending Approval</span>
-        {% endif %}
-      </div>
-      <div class="card-body">
-        <table class="table table-sm">
-          <thead><tr><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
-          <tbody>
-            {% for item in quote.items %}
-            <tr>
-              <td>{{ item.item_name }}
-                {% if item.is_addon %}<span class="badge bg-info">Add-on</span>{% endif %}
-              </td>
-              <td>{{ item.quantity }}</td>
-              <td>{{ item.total_price | peso }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tfoot class="table-light">
-            <tr><td colspan="2" class="text-end"><strong>Subtotal</strong></td>
-                <td>{{ quote.subtotal | peso }}</td></tr>
-            {% if quote.discount_type != 'none' %}
-            <tr><td colspan="2" class="text-end text-danger">Discount</td>
-                <td class="text-danger">- {{ quote.discount_value | peso }}</td></tr>
-            {% endif %}
-            <tr class="fw-bold"><td colspan="2" class="text-end">GRAND TOTAL</td>
-                <td class="text-primary fs-5">{{ quote.grand_total | peso }}</td></tr>
-          </tfoot>
-        </table>
-        {% if quote.inclusions_note %}
-        <p class="small text-muted"><strong>Inclusions:</strong> {{ quote.inclusions_note }}</p>
-        {% endif %}
-        {% if quote.terms_note %}
-        <p class="small text-muted"><strong>Terms:</strong> {{ quote.terms_note }}</p>
-        {% endif %}
-
-        <div class="d-flex gap-2 mt-3">
-          <a href="{{ url_for('quotes.quote_pdf', event_id=event.id, quote_id=quote.id) }}"
-             class="btn btn-outline-secondary btn-sm">📄 Download PDF</a>
-          {% if not quote.is_approved %}
-          <form method="POST"
-                action="{{ url_for('portal.approve_quote', event_id=event.id, quote_id=quote.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn-success btn-sm">✅ Approve This Quote</button>
-          </form>
-          {% endif %}
+<!-- ── Active event card ──────────────────────────── -->
+<div class="card fade-up" style="overflow:hidden;margin-bottom:16px;">
+  <div style="background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);padding:28px 32px 24px;position:relative;overflow:hidden;">
+    <div style="position:absolute;right:-30px;top:-30px;width:180px;height:180px;border:1.5px solid rgba(184,146,74,.15);border-radius:50%;pointer-events:none;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-size:11px;letter-spacing:.1em;color:rgba(248,244,237,.4);margin-bottom:8px;">ACTIVE EVENT</div>
+        <h2 class="disp" style="font-size:28px;color:#f8f4ed;font-weight:600;margin-bottom:12px;">{{ event.name }}</h2>
+        <div style="display:flex;flex-wrap:wrap;gap:16px;">
+          <span style="font-size:13px;color:rgba(248,244,237,.6);display:flex;align-items:center;gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {{ event.event_date | dateformat }}
+          </span>
+          {% if event.venue_name %}<span style="font-size:13px;color:rgba(248,244,237,.6);display:flex;align-items:center;gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>{{ event.venue_name }}</span>{% endif %}
+          {% if event.expected_guests %}<span style="font-size:13px;color:rgba(248,244,237,.6);display:flex;align-items:center;gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>{{ event.expected_guests }} Guests</span>{% endif %}
         </div>
       </div>
-    </div>
-    {% else %}
-    <div class="alert alert-info">No proposal sent yet. Our team will send one soon! 😊</div>
-    {% endif %}
-  </div>
-
-  <!-- PAYMENTS TAB -->
-  <div class="tab-pane fade" id="tab-payments">
-    <div class="card shadow-sm">
-      <div class="card-body p-0">
-        <table class="table mb-0">
-          <thead class="table-light">
-            <tr><th>Type</th><th>Amount</th><th>Due</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            {% for p in payments %}
-            <tr>
-              <td>{{ p.label or p.payment_type }}</td>
-              <td>{{ p.amount | peso }}</td>
-              <td>{{ p.due_date | dateformat if p.due_date else '—' }}</td>
-              <td><span class="badge bg-{{ p.status_color }}">{{ p.status }}</span></td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4" class="text-muted text-center">No payment records yet.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="mt-3">
-      <div class="alert alert-info">
-        <strong>Balance Remaining: {{ event.balance_due | peso }}</strong>
-        <br>For payment methods, please contact your coordinator. 🙏
-      </div>
+      <span class="badge badge-gold">{{ event.status.replace('_',' ').title() }}</span>
     </div>
   </div>
 
-  <!-- MOODBOARD TAB -->
-  <div class="tab-pane fade" id="tab-moodboard">
-    <div class="mb-3">
-      <div class="card shadow-sm">
-        <div class="card-header fw-bold">📌 Upload Inspiration Peg</div>
-        <div class="card-body">
-          <form method="POST"
-                action="{{ url_for('portal.upload_peg', event_id=event.id) }}"
-                enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="row g-2">
-              <div class="col-md-4">
-                <input type="text" name="title" class="form-control form-control-sm"
-                       placeholder="Title (optional)">
-              </div>
-              <div class="col-md-4">
-                <select name="category" class="form-select form-select-sm">
-                  {% for cat in peg_categories %}
-                  <option value="{{ cat }}">{{ cat.replace('_',' ').title() }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-md-4">
-                <input type="url" name="source_url" class="form-control form-control-sm"
-                       placeholder="Pinterest/IG link (optional)">
-              </div>
-              <div class="col-md-6">
-                <input type="file" name="peg_image" class="form-control form-control-sm"
-                       accept="image/*">
-              </div>
-              <div class="col-md-6">
-                <input type="url" name="image_url_ext" class="form-control form-control-sm"
-                       placeholder="Or paste image URL">
-              </div>
-              <div class="col-12">
-                <textarea name="notes" class="form-control form-control-sm" rows="2"
-                          placeholder="Notes for our team…"></textarea>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary btn-sm mt-2">Upload Peg ✨</button>
-          </form>
+  <!-- Pipeline -->
+  <div style="padding:24px 32px;border-bottom:1px solid var(--border);">
+    <div style="font-size:11px;letter-spacing:.1em;color:var(--tm);margin-bottom:20px;">PLANNING PIPELINE</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;position:relative;">
+      {% for stage in pipe_stages %}
+      {% set i = loop.index0 %}
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;z-index:1;flex:1;">
+        <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;{% if i < pipe_idx %}background:var(--gold);border:2px solid var(--gold);color:#fff;{% elif i == pipe_idx %}background:var(--navy);border:2px solid var(--gold);color:var(--gold);{% else %}background:var(--surface);border:2px solid var(--border-s);color:var(--tm);{% endif %}">
+          {% if i < pipe_idx %}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{% else %}{{ i + 1 }}{% endif %}
         </div>
+        <span style="font-size:11px;font-weight:{% if i == pipe_idx %}600{% else %}400{% endif %};color:{% if i == pipe_idx %}var(--gold){% elif i < pipe_idx %}var(--ts){% else %}var(--tm){% endif %};text-align:center;white-space:nowrap;">{{ stage }}</span>
       </div>
-    </div>
-
-    <div class="row g-2">
-      {% for peg in pegs %}
-      <div class="col-6 col-md-3">
-        <div class="card shadow-sm">
-          <img src="{{ peg.image_url }}" class="card-img-top" alt="{{ peg.title }}"
-               style="height:150px;object-fit:cover">
-          <div class="card-body p-2">
-            <small class="text-muted">{{ peg.category.replace('_',' ').title() }}</small>
-            <p class="mb-1 small">{{ peg.title or '—' }}</p>
-            {% if peg.is_approved %}
-            <span class="badge bg-success">✅ Approved</span>
-            {% elif not peg.is_client_uploaded %}
-            <form method="POST"
-                  action="{{ url_for('portal.approve_peg', event_id=event.id, peg_id=peg.id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button class="btn btn-sm btn-outline-success w-100 py-0">
-                ✅ Approve
-              </button>
-            </form>
-            {% else %}
-            <span class="badge bg-secondary">Your upload</span>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      {% else %}
-      <div class="col-12"><p class="text-muted">No pegs yet.</p></div>
+      {% if not loop.last %}
+      <div style="flex:1;height:2px;background:{% if i < pipe_idx %}var(--gold){% else %}var(--border){% endif %};margin-bottom:24px;"></div>
+      {% endif %}
       {% endfor %}
     </div>
   </div>
+</div>
 
-  <!-- FEEDBACK TAB -->
-  <div class="tab-pane fade" id="tab-feedback">
-    {% if event.status == 'done' or event.status == 'event_day' %}
-    <div class="card shadow-sm" style="max-width:600px">
-      <div class="card-header fw-bold">⭐ Share Your Experience</div>
-      <div class="card-body">
-        <a href="{{ url_for('portal.submit_feedback', event_id=event.id) }}"
-           class="btn btn-primary">Rate Your Event 🌟</a>
+<!-- ── Proposal / Quote ───────────────────────────── -->
+{% if quote %}
+<div class="card fade-up" style="padding:28px 32px;margin-bottom:16px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px;">
+    <div>
+      <div style="font-size:11px;letter-spacing:.1em;color:var(--gold);display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        {% if quote.is_approved %}PROPOSAL APPROVED{% else %}AWAITING YOUR APPROVAL{% endif %}
       </div>
+      <h3 class="disp" style="font-size:22px;color:var(--tp);">{{ quote.label or ('Proposal v' ~ quote.version) }}</h3>
     </div>
+    {% if quote.is_approved %}
+    <span class="badge badge-green">Approved</span>
     {% else %}
-    <div class="alert alert-info">Feedback will be available after your event. ✨</div>
+    <span class="badge badge-warn">Action Required</span>
     {% endif %}
   </div>
+
+  <!-- Quote details table -->
+  <div style="background:var(--overlay);border-radius:var(--r-md);padding:20px 24px;margin:16px 0;">
+    {% if quote.package_name %}
+    <div style="display:flex;gap:24px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--ts);min-width:100px;">Package</span>
+      <span style="font-size:13px;color:var(--tp);font-weight:500;">{{ quote.package_name }}</span>
+    </div>
+    {% endif %}
+    {% if quote.inclusions_note %}
+    <div style="display:flex;gap:24px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--ts);min-width:100px;">Inclusions</span>
+      <span style="font-size:13px;color:var(--tp);">{{ quote.inclusions_note }}</span>
+    </div>
+    {% endif %}
+    {% if event.venue_name %}
+    <div style="display:flex;gap:24px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--ts);min-width:100px;">Venue</span>
+      <span style="font-size:13px;color:var(--tp);">{{ event.venue_name }}</span>
+    </div>
+    {% endif %}
+    <div style="display:flex;gap:24px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;color:var(--ts);min-width:100px;">Quote</span>
+      <span style="font-size:14px;color:var(--tp);font-weight:600;">{{ quote.grand_total | peso }} (all-in, VAT-inclusive)</span>
+    </div>
+    {% if quote.valid_until %}
+    <div style="display:flex;gap:24px;padding:10px 0;">
+      <span style="font-size:13px;color:var(--ts);min-width:100px;">Valid Until</span>
+      <span style="font-size:13px;color:var(--tp);">{{ quote.valid_until | dateformat }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Action buttons -->
+  {% if not quote.is_approved %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+    <form method="POST" action="{{ url_for('portal.approve_quote', event_id=event.id, quote_id=quote.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="btn-green">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Approve Proposal
+      </button>
+    </form>
+    <a href="{{ url_for('portal.request_change') }}" class="btn-ghost">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.1"/></svg>
+      Request Changes
+    </a>
+  </div>
+  {% else %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+    <a href="{{ url_for('quotes.quote_pdf', event_id=event.id, quote_id=quote.id) }}" class="btn-ghost">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download PDF
+    </a>
+  </div>
+  {% endif %}
 </div>
+{% endif %}
+
+<!-- ── Upcoming milestones (payments) ────────────────── -->
+{% if payments %}
+<div class="card fade-up" style="padding:28px 32px;margin-bottom:16px;">
+  <div style="font-size:11px;letter-spacing:.1em;color:var(--tm);margin-bottom:20px;">UPCOMING MILESTONES</div>
+  {% for pmt in payments %}
+  <div style="display:flex;align-items:center;gap:14px;padding:12px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+    <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:{% if pmt.status=='paid' %}var(--success){% elif pmt.status=='overdue' %}var(--danger){% else %}var(--gold){% endif %};"></div>
+    <div style="flex:1;">
+      <div style="font-size:14px;font-weight:500;color:var(--tp);">{{ pmt.label or pmt.payment_type.replace('_',' ').title() }}</div>
+      <div style="font-size:12px;color:var(--tm);margin-top:2px;">{{ pmt.due_date | dateformat }}</div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--tp);margin-right:12px;">{{ pmt.amount | peso }}</div>
+    {% if pmt.status == 'paid' %}
+    <span class="badge badge-green">Paid</span>
+    {% elif pmt.status == 'overdue' %}
+    <span class="badge" style="background:var(--danger-pale);border:1px solid var(--danger-border);color:var(--danger);">Overdue</span>
+    {% else %}
+    <span class="badge badge-warn">Pending</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% endblock %}

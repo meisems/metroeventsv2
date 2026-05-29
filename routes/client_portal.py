@@ -181,3 +181,115 @@ def _get_client_event(event_id: int) -> Event:
     if not client or event.client_id != client.id:
         abort(403)
     return event
+
+
+# ─── INQUIRE ──────────────────────────────────────────────────────────────
+
+@portal_bp.route("/inquire", methods=["GET", "POST"])
+@login_required
+@client_only
+def inquire():
+    if request.method == "POST":
+        event_type   = request.form.get("event_type", "").strip()
+        pref_date    = request.form.get("preferred_date", "").strip()
+        venue        = request.form.get("venue", "").strip()
+        guest_count  = request.form.get("guest_count", "").strip()
+        budget_range = request.form.get("budget_range", "").strip()
+        notes        = request.form.get("notes", "").strip()
+
+        if not event_type:
+            flash("Please select an event type.", "warning")
+            return redirect(url_for("portal.inquire"))
+
+        # Log the inquiry as a flash for now; wire to a model/email as needed
+        flash(
+            f"Inquiry received! We'll reach out within 24 hours to discuss your "
+            f"{event_type.replace('_',' ').title()} event. Salamat!",
+            "success"
+        )
+        return redirect(url_for("portal.inquire"))
+
+    return render_template("portal/inquire.html")
+
+
+# ─── REQUEST CHANGE ────────────────────────────────────────────────────────
+
+@portal_bp.route("/change", methods=["GET", "POST"])
+@login_required
+@client_only
+def request_change():
+    if request.method == "POST":
+        change_type = request.form.get("change_type", "package")
+        urgency     = request.form.get("urgency", "normal")
+        description = request.form.get("description", "").strip()
+
+        if not description:
+            flash("Please describe the change you need.", "warning")
+            return redirect(url_for("portal.request_change"))
+
+        flash(
+            f"Change request logged ({urgency.upper()}). Your coordinator will respond shortly.",
+            "success"
+        )
+        return redirect(url_for("portal.request_change"))
+
+    return render_template("portal/request_change.html")
+
+
+# ─── REVIEW (portal tab wrapper for submit_feedback) ──────────────────────
+
+@portal_bp.route("/review")
+@login_required
+@client_only
+def review():
+    """Show the review form for the client's most recently completed event."""
+    from models.client import Client
+    from models.after_event import AfterEvent
+
+    client = Client.query.filter_by(email=current_user.email).first()
+    event  = None
+    ae     = None
+
+    if client:
+        # Prefer completed events; fall back to most recent event
+        from models.event import Event
+        event = (
+            client.events
+            .filter(Event.status.in_(["done", "event_day"]))
+            .order_by(Event.event_date.desc())
+            .first()
+        ) or client.events.order_by(Event.event_date.desc()).first()
+
+        if event:
+            ae = event.after_event or AfterEvent(event_id=event.id)
+
+    return render_template("portal/review.html", event=event, ae=ae)
+
+
+# ─── PROFILE ──────────────────────────────────────────────────────────────
+
+@portal_bp.route("/profile", methods=["GET", "POST"])
+@login_required
+@client_only
+def profile():
+    if request.method == "POST":
+        name    = request.form.get("name", "").strip()
+        phone   = request.form.get("phone", "").strip()
+        address = request.form.get("address", "").strip()
+
+        if not name:
+            flash("Name cannot be empty.", "warning")
+            return redirect(url_for("portal.profile"))
+
+        current_user.name  = name
+        current_user.phone = phone or None
+
+        # Store address if the column exists on User model
+        if hasattr(current_user, "address"):
+            current_user.address = address or None
+
+        db.session.commit()
+        flash("Profile updated successfully.", "success")
+        return redirect(url_for("portal.profile"))
+
+    return render_template("portal/profile.html")

@@ -1,0 +1,65 @@
+{% extends "portal/base_portal.html" %}
+{% set active_tab = "inquire" %}
+{% block title %}New Inquiry{% endblock %}
+{% block portal_content %}
+<div class="portal-page-head fade-up">
+  <h1 class="disp">New Event Inquiry</h1>
+  <p>Planning something new? Share the details and we'll prepare a tailored proposal for you.</p>
+</div>
+
+<div class="card fade-up" style="padding:32px 36px;max-width:820px;">
+  <form method="POST" action="{{ url_for('portal.inquire') }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <div class="field-row">
+      <div class="field">
+        <label>Event Type</label>
+        <select name="event_type">
+          <option value="">Select type</option>
+          <option value="wedding">Wedding</option>
+          <option value="corporate">Corporate Event</option>
+          <option value="debut">Debut / 18th Birthday</option>
+          <option value="birthday">Birthday Celebration</option>
+          <option value="anniversary">Anniversary</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Preferred Date</label>
+        <input type="date" name="preferred_date"/>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Preferred Venue</label>
+        <input type="text" name="venue" placeholder="e.g. Grand Hyatt Manila"/>
+      </div>
+      <div class="field">
+        <label>Estimated Guest Count</label>
+        <input type="number" name="guest_count" placeholder="e.g. 200" min="1"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Budget Range</label>
+      <select name="budget_range">
+        <option value="">Select range</option>
+        <option value="under_200k">Under PHP 200,000</option>
+        <option value="200k_500k">PHP 200,000 – 500,000</option>
+        <option value="500k_1m">PHP 500,000 – 1,000,000</option>
+        <option value="1m_2m">PHP 1,000,000 – 2,000,000</option>
+        <option value="above_2m">Above PHP 2,000,000</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Concept Notes and Special Requests</label>
+      <textarea name="notes" rows="5" placeholder="Describe your dream event — theme, mood, special requirements, inspiration boards..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+      <button type="submit" class="btn-gold">
+        Submit Inquiry
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+      <button type="reset" class="btn-ghost">Clear Form</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
