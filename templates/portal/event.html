@@ -1,518 +1,793 @@
-{% extends "portal/base.html" %}
-{% block title %}{{ event.name }}{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ event.name }} — Metro Events Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --dark:         #14152a;
+      --dark-2:       #1e2040;
+      --dark-sidebar: #13142a;
+      --gold:         #b8922a;
+      --gold-light:   #d4a843;
+      --gold-pale:    #f0c060;
+      --cream:        #f7f4ee;
+      --cream-2:      #efe9dc;
+      --white:        #ffffff;
+      --text:         #1e1f3a;
+      --muted:        #6b6e85;
+      --border:       #e0dbd0;
+      --sidebar-w:    268px;
+      --success:      #16a34a;
+      --success-bg:   #f0fdf4;
+      --success-border:#bbf7d0;
 
-{% block head_extra %}
-<style>
-  .back-link {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 13px; font-weight: 500; color: var(--ts);
-    margin-bottom: 20px;
-    padding: 6px 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    background: var(--surface);
-  }
-  .back-link:hover { color: var(--gold); border-color: var(--gold); }
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
 
-  .event-title-block { margin-bottom: 28px; }
-  .event-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 30px; font-weight: 600; color: var(--navy);
-    line-height: 1.15; margin-bottom: 6px;
-  }
-  .event-meta-row {
-    display: flex; flex-wrap: wrap; gap: 14px;
-    font-size: 13px; color: var(--ts);
-  }
-  .event-meta-item { display: flex; align-items: center; gap: 5px; }
-  .event-meta-item svg { color: var(--gold); }
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
 
-  /* Tabs */
-  .portal-tabs {
-    display: flex; gap: 0;
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 28px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .portal-tabs::-webkit-scrollbar { display: none; }
-  .portal-tab {
-    display: flex; align-items: center; gap: 6px;
-    padding: 10px 18px;
-    font-size: 13.5px; font-weight: 500;
-    color: var(--ts);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    white-space: nowrap;
-    cursor: pointer; background: none; border-top: none; border-left: none; border-right: none;
-    font-family: 'DM Sans', sans-serif;
-    text-decoration: none;
-  }
-  .portal-tab:hover { color: var(--navy); }
-  .portal-tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 600; }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+      --tr: 180ms ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); display: flex; min-height: 100vh; }
 
-  /* Quote card */
-  .quote-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-lg);
-    box-shadow: var(--sh-sm);
-    overflow: hidden;
-  }
-  .quote-card-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
-  }
-  .quote-header-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 20px; font-weight: 600; color: var(--navy);
-  }
+    /* ── SIDEBAR (same as home) ── */
+    .sidebar { width: var(--sidebar-w); background: var(--dark-sidebar); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
+    .sidebar-top { padding: 28px 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; margin-bottom: 4px; }
+    .brand-logo { width: 32px; height: 32px; border-radius: 50%; background: var(--gold-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .brand-logo svg { width: 15px; height: 15px; color: var(--dark); }
+    .brand-name { font-size: 15px; font-weight: 600; color: var(--white); letter-spacing: -0.01em; }
+    .sidebar-sub { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 2px; padding-left: 42px; }
+    .sidebar-user { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--dark-2); border: 1.5px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--gold-pale); flex-shrink: 0; text-transform: uppercase; }
+    .user-name { font-size: 13px; font-weight: 600; color: var(--white); }
+    .user-email { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 1px; word-break: break-all; }
+    .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+    .nav-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.12em; padding: 0 12px; margin-bottom: 8px; margin-top: 16px; }
+    .nav-label:first-child { margin-top: 0; }
+    .nav-link { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: var(--radius-sm); text-decoration: none; font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.55); transition: all var(--tr); margin-bottom: 2px; }
+    .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .nav-link:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+    .nav-link.active { background: rgba(184,146,42,0.15); color: var(--gold-pale); font-weight: 500; }
+    .sidebar-bottom { padding: 16px 12px 24px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .signout-btn { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: var(--radius-sm); text-decoration: none; font-size: 13px; color: rgba(255,255,255,0.35); transition: all var(--tr); width: 100%; }
+    .signout-btn svg { width: 16px; height: 16px; }
+    .signout-btn:hover { color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.04); }
 
-  /* Quote detail grid */
-  .quote-detail-grid {
-    background: var(--overlay);
-    border-radius: var(--r-md);
-    padding: 20px;
-    margin: 16px 0;
-  }
-  .quote-detail-row {
-    display: flex; gap: 16px;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(197,183,160,.5);
-    font-size: 14px;
-  }
-  .quote-detail-row:last-child { border-bottom: none; }
-  .quote-detail-label { color: var(--ts); min-width: 110px; flex-shrink: 0; }
-  .quote-detail-value { color: var(--navy); font-weight: 500; }
+    /* ── MAIN ── */
+    .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+    .page-body { padding: 0; flex: 1; }
 
-  /* Line items table */
-  .quote-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; }
-  .quote-table th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ts); padding: 8px 12px; border-bottom: 2px solid var(--border); }
-  .quote-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--tp); }
-  .quote-table tfoot td { font-weight: 700; background: var(--overlay); }
-  .quote-total { font-size: 18px; color: var(--gold); font-family: 'Cormorant Garamond', serif; }
+    /* ── EVENT HERO HEADER ── */
+    .event-hero {
+      background: var(--dark); padding: 40px 48px;
+      position: relative; overflow: hidden;
+    }
+    .event-hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at top right, rgba(184,146,42,0.07) 0%, transparent 60%);
+    }
+    .event-hero-inner { position: relative; }
+    .event-back {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; color: rgba(255,255,255,0.45);
+      text-decoration: none; margin-bottom: 20px;
+      transition: color var(--tr);
+    }
+    .event-back:hover { color: rgba(255,255,255,0.75); }
+    .event-back svg { width: 14px; height: 14px; }
+    .event-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+    .event-status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+      padding: 5px 14px; border-radius: var(--radius-full);
+      white-space: nowrap;
+    }
+    .event-status-pill.planning { background: rgba(212,168,67,0.2); color: var(--gold-pale); }
+    .event-status-pill.reserved { background: rgba(139,195,74,0.2); color: #a5d65a; }
+    .event-status-pill.inquiry { background: rgba(100,181,246,0.2); color: #93c5fd; }
+    .event-status-pill.done { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+    .event-status-pill.event_day { background: rgba(212,168,67,0.3); color: var(--gold-pale); }
+    .event-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.4rem; font-weight: 600; color: var(--white);
+      letter-spacing: -0.02em; margin-bottom: 6px;
+    }
+    .event-meta-row {
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+    }
+    .event-meta-item {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 13px; color: rgba(255,255,255,0.55);
+    }
+    .event-meta-item svg { width: 13px; height: 13px; color: var(--gold); }
 
-  /* Action buttons row */
-  .quote-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+    /* Pipeline */
+    .pipeline-bar {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius-md);
+      padding: 20px 28px;
+      margin-top: 28px;
+    }
+    .pipeline-label-top { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px; }
+    .pipeline { display: flex; align-items: center; gap: 0; }
+    .p-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+    .p-step::before {
+      content: ''; position: absolute;
+      top: 15px; left: -50%; width: 100%; height: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+    .p-step:first-child::before { display: none; }
+    .p-step.done-step::before { background: var(--gold); }
+    .p-dot {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 1; margin-bottom: 8px;
+      transition: all var(--tr);
+    }
+    .p-dot.done { background: var(--gold); border-color: var(--gold); }
+    .p-dot.done svg { display: block; }
+    .p-dot svg { width: 13px; height: 13px; color: var(--white); display: none; }
+    .p-dot.current {
+      border-color: var(--gold);
+      background: transparent;
+      box-shadow: 0 0 0 4px rgba(184,146,42,0.15);
+    }
+    .p-dot.current::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); display: block; }
+    .p-name { font-size: 10px; color: rgba(255,255,255,0.35); text-align: center; }
+    .p-name.active { color: var(--gold-pale); font-weight: 600; }
 
-  /* Payments */
-  .payment-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  .payment-table th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ts); padding: 8px 14px; border-bottom: 2px solid var(--border); }
-  .payment-table td { padding: 13px 14px; border-bottom: 1px solid var(--border); }
-  .payment-summary { background: var(--gold-pale); border: 1px solid #e8d5b0; border-radius: var(--r-md); padding: 16px 20px; margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-  .payment-summary-label { font-size: 13px; color: var(--ts); }
-  .payment-summary-amount { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--navy); }
+    /* ── TABS ── */
+    .portal-tabs {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 48px;
+      display: flex; gap: 0;
+    }
+    .tab-btn {
+      padding: 16px 20px; font-size: 13px; font-weight: 500;
+      color: var(--muted); background: transparent; border: none;
+      border-bottom: 2px solid transparent; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      transition: all var(--tr); text-decoration: none;
+      margin-bottom: -1px;
+    }
+    .tab-btn svg { width: 14px; height: 14px; }
+    .tab-btn:hover { color: var(--dark); }
+    .tab-btn.active { color: var(--dark); border-bottom-color: var(--gold); font-weight: 600; }
 
-  /* Moodboard */
-  .peg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
-  .peg-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    overflow: hidden;
-    box-shadow: var(--sh-xs);
-    transition: transform var(--t-base), box-shadow var(--t-base);
-  }
-  .peg-card:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
-  .peg-img { width: 100%; height: 150px; object-fit: cover; display: block; }
-  .peg-body { padding: 10px 12px; }
-  .peg-category { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tm); margin-bottom: 3px; }
-  .peg-title { font-size: 13px; color: var(--tp); font-weight: 500; margin-bottom: 8px; }
+    /* ── CONTENT AREA ── */
+    .tab-content-area { padding: 40px 48px; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
 
-  /* Upload peg form */
-  .upload-form-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--r-lg); padding: 22px 24px;
-    margin-bottom: 20px; box-shadow: var(--sh-sm);
-  }
-  .upload-form-title { font-size: 14px; font-weight: 600; color: var(--navy); margin-bottom: 16px; }
-  .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media(max-width:600px) { .upload-grid { grid-template-columns: 1fr; } }
+    /* ── PROPOSAL SECTION ── */
+    .section-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow-sm); margin-bottom: 20px;
+    }
+    .section-card-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .section-card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem; font-weight: 600; color: var(--dark);
+    }
+    .badge-approved { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: var(--radius-full); display: flex; align-items: center; gap: 5px; }
+    .badge-approved svg { width: 12px; height: 12px; }
+    .badge-pending { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: var(--radius-full); }
+    .badge-action { background: #fff8f0; color: #c05621; border: 1px solid #fbd38d; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: var(--radius-full); }
 
-  /* Meetings list */
-  .milestone-list { display: flex; flex-direction: column; }
-  .milestone-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--border);
-    gap: 12px;
-  }
-  .milestone-item:last-child { border-bottom: none; }
-  .milestone-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .milestone-info { flex: 1; }
-  .milestone-name { font-size: 14px; font-weight: 500; color: var(--navy); }
-  .milestone-date { font-size: 12px; color: var(--ts); margin-top: 2px; }
-</style>
-{% endblock %}
+    /* Quote table */
+    .quote-meta-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 0; padding: 28px;
+    }
+    .quote-meta-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .quote-meta-item:nth-last-child(-n+2) { border: none; }
+    .qm-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .qm-value { font-size: 14px; color: var(--text); font-weight: 400; }
 
-{% block content %}
-<a href="{{ url_for('portal.home') }}" class="back-link fade-up">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-  My Events
-</a>
+    .quote-table-wrap { padding: 0 28px 28px; }
+    .quote-table { width: 100%; border-collapse: collapse; }
+    .quote-table th {
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.1em;
+      padding: 10px 0; border-bottom: 1.5px solid var(--border);
+      text-align: left;
+    }
+    .quote-table th:last-child { text-align: right; }
+    .quote-table td { padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text); vertical-align: middle; }
+    .quote-table td:last-child { text-align: right; font-weight: 500; }
+    .quote-table tr:last-child td { border: none; }
+    .addon-badge { background: #eff6ff; color: #1d4ed8; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-full); margin-left: 8px; }
+    .quote-total-row td { padding-top: 16px; font-weight: 700; font-size: 15px; }
+    .quote-total-amt { color: var(--gold); font-size: 1.3rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; }
+    .quote-actions { padding: 20px 28px; background: var(--cream); border-top: 1px solid var(--border); display: flex; gap: 12px; }
 
-<div class="event-title-block fade-up d1">
-  <div class="event-name">{{ event.name }}</div>
-  <div class="event-meta-row">
-    <span class="event-meta-item">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      {{ event.event_date | dateformat }}
-    </span>
-    {% if event.venue_name %}
-    <span class="event-meta-item">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      {{ event.venue_name }}
-    </span>
-    {% endif %}
-    {% if event.package_name %}
-    <span class="event-meta-item">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-      {{ event.package_name }}
-    </span>
-    {% endif %}
-  </div>
-</div>
+    .btn-approve {
+      background: var(--success); color: var(--white);
+      font-size: 13px; font-weight: 600;
+      padding: 11px 24px; border-radius: var(--radius-sm);
+      border: none; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: all var(--tr);
+    }
+    .btn-approve:hover { background: #15803d; }
+    .btn-approve svg { width: 14px; height: 14px; }
 
-<!-- Tabs -->
-<div class="portal-tabs fade-up d2" id="eventTabs">
-  <button class="portal-tab active" data-tab="proposal">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    Proposal
-  </button>
-  <button class="portal-tab" data-tab="payments">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-    Payments
-  </button>
-  <button class="portal-tab" data-tab="moodboard">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-    Moodboard
-  </button>
-  <button class="portal-tab" data-tab="milestones">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    Milestones
-  </button>
-  <button class="portal-tab" data-tab="feedback">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    Feedback
-  </button>
-</div>
+    .btn-download {
+      background: var(--white); color: var(--text);
+      font-size: 13px; font-weight: 500;
+      padding: 11px 20px; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border); cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: all var(--tr);
+    }
+    .btn-download:hover { border-color: var(--dark); color: var(--dark); }
+    .btn-download svg { width: 14px; height: 14px; }
 
-<!-- PROPOSAL TAB -->
-<div class="tab-panel active fade-up d3" id="tab-proposal">
-  {% if quote %}
-  <div class="quote-card">
-    <div class="quote-card-header">
-      <div>
-        <div class="section-label">Awaiting Your Approval</div>
-        <div class="quote-header-title">{{ quote.label or (quote.package_name ~ ' Proposal v' ~ quote.version) }}</div>
+    /* Milestones */
+    .milestone-list { padding: 0 28px 28px; }
+    .milestone-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 0; border-bottom: 1px solid var(--border);
+    }
+    .milestone-item:last-child { border: none; }
+    .milestone-left { display: flex; align-items: center; gap: 14px; }
+    .milestone-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+    .milestone-dot.done { background: var(--success); }
+    .milestone-dot.upcoming { background: var(--gold); }
+    .milestone-dot.event-day { background: var(--gold-light); }
+    .milestone-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .milestone-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .milestone-badge { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); }
+    .milestone-badge.pending { background: #fffbeb; color: #92400e; }
+    .milestone-badge.scheduled { background: #f0fdf4; color: #16a34a; }
+    .milestone-badge.event-day { background: rgba(184,146,42,0.1); color: var(--gold); border: 1px solid rgba(184,146,42,0.25); }
+
+    /* Payments */
+    .payment-table { width: 100%; border-collapse: collapse; }
+    .payment-table th { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; padding: 10px 20px; border-bottom: 1.5px solid var(--border); text-align: left; }
+    .payment-table td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text); }
+    .payment-table tr:last-child td { border: none; }
+    .status-paid { background: var(--success-bg); color: var(--success); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); border: 1px solid var(--success-border); }
+    .status-pending { background: #fffbeb; color: #92400e; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); }
+    .status-overdue { background: #fef2f2; color: #991b1b; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); }
+    .balance-callout {
+      margin: 0 28px 28px;
+      background: var(--cream); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .balance-callout svg { width: 18px; height: 18px; color: var(--gold); flex-shrink: 0; }
+    .balance-callout-text { font-size: 13px; color: var(--text); }
+    .balance-callout-text strong { font-weight: 700; }
+
+    /* Moodboard */
+    .moodboard-upload { padding: 28px; border-bottom: 1px solid var(--border); }
+    .upload-title { font-size: 13px; font-weight: 600; color: var(--dark); margin-bottom: 16px; }
+    .upload-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .peg-form-input { border: 1.5px solid var(--border) !important; border-radius: var(--radius-sm) !important; font-size: 13px !important; padding: 10px 12px !important; color: var(--text) !important; background: var(--cream) !important; width: 100%; outline: none; transition: border-color var(--tr); }
+    .peg-form-input:focus { border-color: var(--gold) !important; background: var(--white) !important; }
+    .peg-form-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: block; }
+    .btn-upload {
+      background: var(--dark); color: var(--white); font-size: 13px; font-weight: 600;
+      padding: 10px 20px; border-radius: var(--radius-sm); border: none; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: all var(--tr);
+    }
+    .btn-upload:hover { background: var(--gold); color: var(--dark); }
+    .btn-upload svg { width: 14px; height: 14px; }
+
+    .peg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 28px; }
+    .peg-card { border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); background: var(--white); }
+    .peg-img { height: 140px; object-fit: cover; width: 100%; display: block; background: var(--cream); }
+    .peg-body { padding: 10px 12px; }
+    .peg-cat { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .peg-name { font-size: 12px; color: var(--text); margin-top: 2px; }
+    .peg-status { margin-top: 8px; }
+    .badge-approved-sm { background: var(--success-bg); color: var(--success); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full); }
+    .badge-yours { background: var(--cream); color: var(--muted); font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-full); }
+    .btn-approve-sm { background: var(--white); color: var(--success); border: 1px solid var(--success-border); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: var(--radius-full); cursor: pointer; width: 100%; transition: all var(--tr); }
+    .btn-approve-sm:hover { background: var(--success-bg); }
+
+    /* Feedback */
+    .feedback-section { padding: 40px; text-align: center; }
+    .feedback-icon { width: 64px; height: 64px; border-radius: var(--radius-md); background: var(--cream); margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; }
+    .feedback-icon svg { width: 28px; height: 28px; color: var(--gold); }
+    .feedback-title { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; color: var(--dark); margin-bottom: 10px; }
+    .feedback-desc { font-size: 13px; color: var(--muted); max-width: 360px; margin: 0 auto 24px; line-height: 1.7; }
+    .btn-feedback {
+      background: var(--gold-light); color: var(--dark);
+      font-size: 13px; font-weight: 700;
+      padding: 13px 28px; border-radius: var(--radius-sm);
+      text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+      transition: all var(--tr);
+    }
+    .btn-feedback:hover { background: var(--gold-pale); color: var(--dark); transform: translateY(-1px); }
+
+    /* Info callout */
+    .info-callout { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 14px 18px; font-size: 13px; color: #1d4ed8; display: flex; gap: 10px; align-items: flex-start; }
+    .info-callout svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+    .empty-tab { padding: 48px 28px; text-align: center; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-top">
+    <a href="{{ url_for('public.landing') }}" class="sidebar-brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       </div>
-      {% if quote.is_approved %}
-        <span class="badge badge-success">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-          Approved by {{ quote.approved_by }}
-        </span>
-      {% else %}
-        <span class="badge badge-warn">Action Required</span>
-      {% endif %}
-    </div>
-    <div style="padding: 24px;">
-      <!-- Detail grid -->
-      <div class="quote-detail-grid">
-        {% if quote.package_name %}
-        <div class="quote-detail-row">
-          <span class="quote-detail-label">Package</span>
-          <span class="quote-detail-value">{{ quote.package_name }}</span>
-        </div>
-        {% endif %}
-        {% if quote.inclusions_note %}
-        <div class="quote-detail-row">
-          <span class="quote-detail-label">Inclusions</span>
-          <span class="quote-detail-value">{{ quote.inclusions_note }}</span>
-        </div>
-        {% endif %}
-        {% if event.venue_name %}
-        <div class="quote-detail-row">
-          <span class="quote-detail-label">Venue</span>
-          <span class="quote-detail-value">{{ event.venue_name }}{% if event.venue_address %} &mdash; {{ event.venue_address }}{% endif %}</span>
-        </div>
-        {% endif %}
-        <div class="quote-detail-row">
-          <span class="quote-detail-label">Quote Total</span>
-          <span class="quote-detail-value" style="color:var(--navy);font-weight:700;">{{ quote.grand_total | peso }} (all-in, VAT-inclusive)</span>
-        </div>
-        {% if quote.balance_due_date %}
-        <div class="quote-detail-row">
-          <span class="quote-detail-label">Valid Until</span>
-          <span class="quote-detail-value">{{ quote.balance_due_date | dateformat }}</span>
-        </div>
-        {% endif %}
-        {% if quote.terms_note %}
-        <div class="quote-detail-row">
-          <span class="quote-detail-label">Terms</span>
-          <span class="quote-detail-value">{{ quote.terms_note }}</span>
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- Line items -->
-      {% if quote.items.count() > 0 %}
-      <table class="quote-table">
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Qty</th>
-            <th style="text-align:right">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in quote.items %}
-          <tr>
-            <td>
-              {{ item.item_name }}
-              {% if item.is_addon %}<span class="badge badge-muted" style="margin-left:6px;">Add-on</span>{% endif %}
-            </td>
-            <td>{{ item.quantity }}</td>
-            <td style="text-align:right">{{ item.total_price | peso }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colspan="2" style="text-align:right">Subtotal</td>
-            <td style="text-align:right">{{ quote.subtotal | peso }}</td>
-          </tr>
-          {% if quote.discount_type != 'none' %}
-          <tr>
-            <td colspan="2" style="text-align:right;color:var(--danger)">Discount</td>
-            <td style="text-align:right;color:var(--danger)">- {{ quote.discount_value | peso }}</td>
-          </tr>
-          {% endif %}
-          <tr>
-            <td colspan="2" style="text-align:right;font-size:15px;">Grand Total</td>
-            <td style="text-align:right" class="quote-total">{{ quote.grand_total | peso }}</td>
-          </tr>
-        </tfoot>
-      </table>
-      {% endif %}
-
-      <!-- Actions -->
-      {% if not quote.is_approved %}
-      <div class="quote-actions">
-        <form method="POST" action="{{ url_for('portal.approve_quote', event_id=event.id, quote_id=quote.id) }}" style="display:inline;">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn btn-success">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Approve Proposal
-          </button>
-        </form>
-        <a href="{{ url_for('portal.request_change') }}" class="btn btn-outline">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.07"/></svg>
-          Request Changes
-        </a>
-      </div>
-      {% else %}
-      <div style="background:var(--success-pale);border:1px solid #b8dfc9;border-radius:var(--r-md);padding:14px 18px;display:flex;align-items:center;gap:10px;margin-top:16px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        <span style="font-size:13.5px;color:var(--success);font-weight:500;">Proposal approved on {{ quote.approved_at | dateformat if quote.approved_at else 'record' }}. Our team will be in touch.</span>
-      </div>
-      {% endif %}
-    </div>
+      <span class="brand-name">Metro Events</span>
+    </a>
+    <div class="sidebar-sub">Client Portal</div>
   </div>
-  {% else %}
-  <div style="text-align:center;padding:48px 24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);">
-    <div style="width:56px;height:56px;background:var(--gold-pale);border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b8924a" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    </div>
-    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--navy);margin-bottom:6px;">No Proposal Yet</div>
-    <p style="font-size:14px;color:var(--ts);">Our team will send you a proposal soon. Stay tuned!</p>
-  </div>
-  {% endif %}
-</div>
-
-<!-- PAYMENTS TAB -->
-<div class="tab-panel" id="tab-payments">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);overflow:hidden;">
-    <table class="payment-table">
-      <thead>
-        <tr>
-          <th>Description</th>
-          <th>Amount</th>
-          <th>Due Date</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in payments %}
-        <tr>
-          <td style="font-weight:500;">{{ p.label or p.payment_type.replace('_',' ').title() }}</td>
-          <td style="font-weight:600;color:var(--navy);">{{ p.amount | peso }}</td>
-          <td style="color:var(--ts);">{{ p.due_date | dateformat if p.due_date else '—' }}</td>
-          <td>
-            {% if p.status == 'paid' %}
-              <span class="badge badge-success">Paid</span>
-            {% elif p.status == 'overdue' %}
-              <span class="badge badge-danger">Overdue</span>
-            {% else %}
-              <span class="badge badge-warn">Pending</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="4" style="text-align:center;color:var(--ts);padding:32px;">No payment records yet.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  <div class="payment-summary">
+  <div class="sidebar-user">
+    <div class="user-avatar">{{ current_user.name[0] if current_user.name else 'C' }}</div>
     <div>
-      <div class="payment-summary-label">Remaining Balance</div>
-      <div class="payment-summary-amount">{{ event.balance_due | peso }}</div>
-    </div>
-    <div style="font-size:13px;color:var(--ts);max-width:260px;text-align:right;">
-      For payment methods and arrangements, please contact your coordinator.
+      <div class="user-name">{{ current_user.name }}</div>
+      <div class="user-email">{{ current_user.email }}</div>
     </div>
   </div>
-</div>
-
-<!-- MOODBOARD TAB -->
-<div class="tab-panel" id="tab-moodboard">
-  <div class="upload-form-card">
-    <div class="upload-form-title">Upload Inspiration Peg</div>
-    <form method="POST" action="{{ url_for('portal.upload_peg', event_id=event.id) }}" enctype="multipart/form-data">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="upload-grid">
-        <div>
-          <label class="form-label">Title (optional)</label>
-          <input type="text" name="title" class="form-control" placeholder="e.g. Floral centrepiece idea">
-        </div>
-        <div>
-          <label class="form-label">Category</label>
-          <select name="category" class="form-control">
-            {% for cat in peg_categories %}
-            <option value="{{ cat }}">{{ cat.replace('_',' ').title() }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label class="form-label">Upload Image</label>
-          <input type="file" name="peg_image" class="form-control" accept="image/*">
-        </div>
-        <div>
-          <label class="form-label">Or Paste Image URL</label>
-          <input type="url" name="image_url_ext" class="form-control" placeholder="https://…">
-        </div>
-        <div style="grid-column:1/-1;">
-          <label class="form-label">Notes for our team</label>
-          <textarea name="notes" class="form-control" rows="2" placeholder="Any notes or context for this inspiration…"></textarea>
-        </div>
-      </div>
-      <div style="margin-top:14px;">
-        <button type="submit" class="btn btn-gold">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Upload Peg
-        </button>
-      </div>
-    </form>
-  </div>
-
-  {% if pegs %}
-  <div class="peg-grid">
-    {% for peg in pegs %}
-    <div class="peg-card">
-      <img src="{{ peg.image_url }}" alt="{{ peg.title or 'Inspiration peg' }}" class="peg-img" onerror="this.style.background='var(--overlay)';this.style.minHeight='150px';this.removeAttribute('src');">
-      <div class="peg-body">
-        <div class="peg-category">{{ peg.category.replace('_',' ').title() }}</div>
-        <div class="peg-title">{{ peg.title or '—' }}</div>
-        {% if peg.is_approved %}
-          <span class="badge badge-success">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            Approved
-          </span>
-        {% elif peg.is_client_uploaded %}
-          <span class="badge badge-muted">Your Upload</span>
-        {% else %}
-          <form method="POST" action="{{ url_for('portal.approve_peg', event_id=event.id, peg_id=peg.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-outline" style="width:100%;padding:6px 10px;font-size:12px;margin-top:2px;">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              Approve
-            </button>
-          </form>
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <p style="color:var(--ts);text-align:center;padding:32px 0;">No inspiration pegs yet. Upload your first one above!</p>
-  {% endif %}
-</div>
-
-<!-- MILESTONES TAB -->
-<div class="tab-panel" id="tab-milestones">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;box-shadow:var(--sh-sm);">
-    <div class="section-label">Upcoming Milestones</div>
-    {% set meetings = event.meetings | sort(attribute='meeting_date') if event.meetings else [] %}
-    {% if meetings %}
-    <div class="milestone-list">
-      {% for m in meetings %}
-      <div class="milestone-item">
-        <div class="milestone-dot" style="background:{% if m.status == 'completed' %}var(--success){% elif m.status == 'cancelled' %}var(--danger){% else %}var(--gold){% endif %};"></div>
-        <div class="milestone-info">
-          <div class="milestone-name">{{ m.package_availed }}</div>
-          <div class="milestone-date">{{ m.meeting_date | dateformat }} &mdash; {{ m.location }}</div>
-        </div>
-        <span class="badge {% if m.status == 'completed' %}badge-success{% elif m.status == 'cancelled' %}badge-danger{% elif m.status == 'scheduled' %}badge-muted{% else %}badge-warn{% endif %}">
-          {{ m.status.replace('_',' ').title() }}
-        </span>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <p style="color:var(--ts);text-align:center;padding:28px 0;">No milestones scheduled yet. Your coordinator will update you soon.</p>
-    {% endif %}
-  </div>
-</div>
-
-<!-- FEEDBACK TAB -->
-<div class="tab-panel" id="tab-feedback">
-  {% if event.status in ['done', 'event_day'] %}
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px 24px;box-shadow:var(--sh-sm);text-align:center;">
-    <div style="width:56px;height:56px;background:var(--gold-pale);border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b8924a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    </div>
-    <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--navy);margin-bottom:8px;">Share Your Experience</div>
-    <p style="font-size:14px;color:var(--ts);margin-bottom:22px;">How did we do? Your feedback means the world to us.</p>
-    <a href="{{ url_for('portal.submit_feedback', event_id=event.id) }}" class="btn btn-gold">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      Rate Your Event
+  <nav class="sidebar-nav">
+    <div class="nav-label">Navigation</div>
+    <a href="{{ url_for('portal.home') }}" class="nav-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      My Events
+    </a>
+    <a href="{{ url_for('portal.inquire') }}" class="nav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Inquire
+    </a>
+    <a href="{{ url_for('portal.request_change') }}" class="nav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Request Change
+    </a>
+    <a href="{{ url_for('portal.review') }}" class="nav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Review
+    </a>
+    <a href="{{ url_for('portal.profile') }}" class="nav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </a>
+  </nav>
+  <div class="sidebar-bottom">
+    <a href="{{ url_for('client_auth.logout') }}" class="signout-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
     </a>
   </div>
-  {% else %}
-  <div style="background:var(--overlay);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;text-align:center;">
-    <p style="font-size:14px;color:var(--ts);">Feedback will be available after your event day. We look forward to hearing from you!</p>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="page-body">
+
+    <!-- Event Hero -->
+    <div class="event-hero">
+      <div class="event-hero-inner">
+        <a href="{{ url_for('portal.home') }}" class="event-back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to My Events
+        </a>
+        <div class="event-hero-top">
+          <div>
+            <div class="event-status-pill {{ event.status }}">Active Event</div>
+            <h1 class="event-title">{{ event.name }}</h1>
+            <div class="event-meta-row">
+              <div class="event-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                {{ event.event_date | dateformat }}
+              </div>
+              {% if event.venue_name %}
+              <div class="event-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ event.venue_name }}
+              </div>
+              {% endif %}
+              {% if event.guest_count %}
+              <div class="event-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+                {{ event.guest_count }} Guests
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="event-status-pill {{ event.status }}" style="margin-top:0;">
+            {{ event.status.replace('_',' ').title() }}
+          </div>
+        </div>
+
+        <!-- Planning Pipeline -->
+        {% set stages = [('inquiry','Inquiry Received'),('proposal_sent','Proposal Sent'),('reserved','Reserved'),('in_planning','In Planning'),('done','Completed')] %}
+        {% set cur = event.status %}
+        {% set stage_keys = ['inquiry','proposal_sent','reserved','in_planning','done'] %}
+        {% set cur_idx = stage_keys.index(cur) if cur in stage_keys else 0 %}
+        <div class="pipeline-bar">
+          <div class="pipeline-label-top">Planning Pipeline</div>
+          <div class="pipeline">
+            {% for key, label in stages %}
+            {% set i = loop.index0 %}
+            <div class="p-step {% if i < cur_idx %}done-step{% endif %}">
+              <div class="p-dot {% if i < cur_idx %}done{% elif i == cur_idx %}current{% endif %}">
+                {% if i < cur_idx %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>{% endif %}
+              </div>
+              <div class="p-name {% if i == cur_idx %}active{% endif %}">{{ label }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="portal-tabs">
+      <button class="tab-btn active" onclick="switchTab('proposal', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Proposal
+      </button>
+      <button class="tab-btn" onclick="switchTab('payments', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Payments
+      </button>
+      <button class="tab-btn" onclick="switchTab('moodboard', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Moodboard
+      </button>
+      <button class="tab-btn" onclick="switchTab('feedback', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Feedback
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content-area">
+
+      <!-- PROPOSAL TAB -->
+      <div class="tab-pane active" id="tab-proposal">
+        {% if quote %}
+
+        <!-- Awaiting approval callout -->
+        {% if not quote.is_approved %}
+        <div class="section-card" style="margin-bottom:20px;">
+          <div class="section-card-header">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Awaiting Your Approval</div>
+              <div class="section-card-title">{{ quote.label or 'Wedding Package Proposal v' ~ quote.version }}</div>
+            </div>
+            <div class="badge-action">Action Required</div>
+          </div>
+          <div class="quote-meta-grid">
+            {% if quote.package_name %}
+            <div class="quote-meta-item">
+              <div class="qm-label">Package</div>
+              <div class="qm-value">{{ quote.package_name }}</div>
+            </div>
+            {% endif %}
+            {% if quote.inclusions_note %}
+            <div class="quote-meta-item">
+              <div class="qm-label">Inclusions</div>
+              <div class="qm-value">{{ quote.inclusions_note }}</div>
+            </div>
+            {% endif %}
+            {% if event.venue_name %}
+            <div class="quote-meta-item">
+              <div class="qm-label">Venue</div>
+              <div class="qm-value">{{ event.venue_name }}</div>
+            </div>
+            {% endif %}
+            <div class="quote-meta-item">
+              <div class="qm-label">Quote Total</div>
+              <div class="qm-value" style="font-weight:700;font-size:15px;color:var(--gold);">{{ quote.grand_total | peso }}</div>
+            </div>
+            {% if quote.terms_note %}
+            <div class="quote-meta-item" style="grid-column:span 2;">
+              <div class="qm-label">Terms</div>
+              <div class="qm-value">{{ quote.terms_note }}</div>
+            </div>
+            {% endif %}
+          </div>
+          <div class="quote-actions">
+            <form method="POST" action="{{ url_for('portal.approve_quote', event_id=event.id, quote_id=quote.id) }}" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn-approve">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Approve Proposal
+              </button>
+            </form>
+            <a href="{{ url_for('quotes.quote_pdf', event_id=event.id, quote_id=quote.id) }}" class="btn-download">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download PDF
+            </a>
+          </div>
+        </div>
+        {% else %}
+        <div class="section-card" style="margin-bottom:20px;">
+          <div class="section-card-header">
+            <div class="section-card-title">{{ quote.label or 'Proposal v' ~ quote.version }}</div>
+            <div class="badge-approved">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Approved by {{ quote.approved_by }}
+            </div>
+          </div>
+          <div class="quote-actions">
+            <a href="{{ url_for('quotes.quote_pdf', event_id=event.id, quote_id=quote.id) }}" class="btn-download">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download PDF
+            </a>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Quote line items -->
+        {% if quote.items %}
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-card-title">Quote Breakdown</div>
+          </div>
+          <div class="quote-table-wrap">
+            <table class="quote-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in quote.items %}
+                <tr>
+                  <td>
+                    {{ item.item_name }}
+                    {% if item.is_addon %}<span class="addon-badge">Add-on</span>{% endif %}
+                  </td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ item.total_price | peso }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr style="border-top: 1.5px solid var(--border);">
+                  <td colspan="2" style="text-align:right; color:var(--muted); font-size:12px; padding-top:16px;">Subtotal</td>
+                  <td style="padding-top:16px;">{{ quote.subtotal | peso }}</td>
+                </tr>
+                {% if quote.discount_type != 'none' %}
+                <tr>
+                  <td colspan="2" style="text-align:right; color:#c0392b; font-size:12px;">Discount</td>
+                  <td style="color:#c0392b;">- {{ quote.discount_value | peso }}</td>
+                </tr>
+                {% endif %}
+                <tr class="quote-total-row">
+                  <td colspan="2" style="text-align:right; font-size:12px; color:var(--muted);">Grand Total</td>
+                  <td class="quote-total-amt">{{ quote.grand_total | peso }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Milestones placeholder -->
+        {% if event.checklist_items or event.tasks %}
+        <div class="section-card" style="margin-top:20px;">
+          <div class="section-card-header">
+            <div class="section-card-title">Upcoming Milestones</div>
+          </div>
+          <div class="milestone-list">
+            {% for task in event.tasks[:5] if event.tasks %}
+            <div class="milestone-item">
+              <div class="milestone-left">
+                <div class="milestone-dot {% if task.is_done %}done{% else %}upcoming{% endif %}"></div>
+                <div>
+                  <div class="milestone-name">{{ task.title }}</div>
+                  {% if task.due_date %}<div class="milestone-date">{{ task.due_date | dateformat }}</div>{% endif %}
+                </div>
+              </div>
+              <div class="milestone-badge {% if task.is_done %}scheduled{% elif task.status == 'pending' %}pending{% endif %}">
+                {% if task.is_done %}Done{% else %}{{ task.status.title() }}{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="section-card">
+          <div class="empty-tab">
+            <div style="font-size:2rem; margin-bottom:12px; color:var(--gold);">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            No proposal sent yet. Our team will send one soon.
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- PAYMENTS TAB -->
+      <div class="tab-pane" id="tab-payments">
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-card-title">Payment Schedule</div>
+          </div>
+          <table class="payment-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+              <tr>
+                <td>{{ p.label or p.payment_type }}</td>
+                <td style="font-weight:600;">{{ p.amount | peso }}</td>
+                <td>{{ p.due_date | dateformat if p.due_date else 'TBD' }}</td>
+                <td>
+                  <span class="status-{{ p.status }}">{{ p.status.title() }}</span>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="4" style="text-align:center; color:var(--muted); padding:32px;">No payment records yet.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% if event.balance_due %}
+          <div class="balance-callout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div class="balance-callout-text">
+              <strong>Balance Remaining: {{ event.balance_due | peso }}</strong>
+              &mdash; For payment methods, please contact your coordinator.
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- MOODBOARD TAB -->
+      <div class="tab-pane" id="tab-moodboard">
+        <div class="section-card">
+          <div class="moodboard-upload">
+            <div class="upload-title">Upload Inspiration Peg</div>
+            <form method="POST" action="{{ url_for('portal.upload_peg', event_id=event.id) }}" enctype="multipart/form-data">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <div class="upload-grid">
+                <div>
+                  <label class="peg-form-label">Title (optional)</label>
+                  <input type="text" name="title" class="peg-form-input" placeholder="e.g. Floral centerpiece">
+                </div>
+                <div>
+                  <label class="peg-form-label">Category</label>
+                  <select name="category" class="peg-form-input">
+                    {% for cat in peg_categories %}
+                    <option value="{{ cat }}">{{ cat.replace('_',' ').title() }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div>
+                  <label class="peg-form-label">Source URL (optional)</label>
+                  <input type="url" name="source_url" class="peg-form-input" placeholder="Pinterest / Instagram link">
+                </div>
+                <div>
+                  <label class="peg-form-label">Upload Image</label>
+                  <input type="file" name="peg_image" class="peg-form-input" accept="image/*">
+                </div>
+                <div>
+                  <label class="peg-form-label">Or Image URL</label>
+                  <input type="url" name="image_url_ext" class="peg-form-input" placeholder="Paste image URL">
+                </div>
+                <div>
+                  <label class="peg-form-label">Notes for our team</label>
+                  <input type="text" name="notes" class="peg-form-input" placeholder="Describe your vision...">
+                </div>
+              </div>
+              <button type="submit" class="btn-upload">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Upload Peg
+              </button>
+            </form>
+          </div>
+
+          {% if pegs %}
+          <div class="peg-grid">
+            {% for peg in pegs %}
+            <div class="peg-card">
+              {% if peg.image_url %}
+              <img src="{{ peg.image_url }}" class="peg-img" alt="{{ peg.title or '' }}">
+              {% else %}
+              <div class="peg-img" style="display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--border);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </div>
+              {% endif %}
+              <div class="peg-body">
+                <div class="peg-cat">{{ peg.category.replace('_',' ').title() }}</div>
+                <div class="peg-name">{{ peg.title or 'No title' }}</div>
+                <div class="peg-status">
+                  {% if peg.is_approved %}
+                    <span class="badge-approved-sm">Approved</span>
+                  {% elif not peg.is_client_uploaded %}
+                    <form method="POST" action="{{ url_for('portal.approve_peg', event_id=event.id, peg_id=peg.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="btn-approve-sm">Approve</button>
+                    </form>
+                  {% else %}
+                    <span class="badge-yours">Your upload</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-tab">No pegs yet. Upload your first inspiration image above.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- FEEDBACK TAB -->
+      <div class="tab-pane" id="tab-feedback">
+        {% if event.status in ['done', 'event_day'] %}
+        <div class="section-card">
+          <div class="feedback-section">
+            <div class="feedback-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </div>
+            <div class="feedback-title">Share Your Experience</div>
+            <p class="feedback-desc">How was your event? Your feedback helps us do better for every client.</p>
+            <a href="{{ url_for('portal.submit_feedback', event_id=event.id) }}" class="btn-feedback">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Rate Your Event
+            </a>
+          </div>
+        </div>
+        {% else %}
+        <div class="section-card">
+          <div class="empty-tab">
+            <div style="font-size:2rem;margin-bottom:12px;color:var(--gold);">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </div>
+            Feedback will be available after your event.
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+    </div><!-- /tab-content-area -->
   </div>
-  {% endif %}
-</div>
+</main>
 
-{% endblock %}
-
-{% block scripts %}
 <script>
-  const tabs = document.querySelectorAll('.portal-tab');
-  const panels = document.querySelectorAll('.tab-panel');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      panels.forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-    });
-  });
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
 </script>
-{% endblock %}
+</body>
+</html>
