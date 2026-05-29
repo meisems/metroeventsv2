@@ -1,90 +1,160 @@
-{% extends "portal/base_portal.html" %}
-{% set active_tab = "change" %}
+{% extends "portal/base.html" %}
 {% block title %}Request a Change{% endblock %}
-{% block portal_content %}
-<div class="portal-page-head fade-up">
-  <h1 class="disp">Request a Change</h1>
-  <p>Need a last-minute adjustment? Log your memo here and your coordinator will handle it promptly.</p>
+
+{% block head_extra %}
+<style>
+  .change-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    padding: 32px;
+    box-shadow: var(--sh-sm);
+    max-width: 700px;
+  }
+  .change-card-label { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 12px; }
+
+  /* Toggle chips (change type & urgency) */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+  .chip-toggle {
+    display: flex; align-items: center; gap: 7px;
+    padding: 9px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-sm);
+    font-size: 13px; font-weight: 500;
+    color: var(--ts);
+    cursor: pointer; user-select: none;
+    background: var(--surface);
+    transition: all var(--t-base);
+  }
+  .chip-toggle:hover { border-color: var(--navy); color: var(--navy); }
+  .chip-toggle.selected { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .chip-toggle.selected svg { color: var(--gold-lt); }
+
+  /* Urgency chips */
+  .chip-normal.selected { background: var(--success); border-color: var(--success); }
+  .chip-urgent.selected { background: var(--warn); border-color: var(--warn); }
+  .chip-asap.selected { background: var(--danger); border-color: var(--danger); }
+
+  /* Warning note */
+  .asap-note {
+    display: none;
+    background: var(--warn-pale);
+    border: 1px solid #f0d8a8;
+    border-radius: var(--r-md);
+    padding: 13px 16px;
+    font-size: 13px; color: var(--warn);
+    margin-bottom: 20px;
+    align-items: flex-start; gap: 9px;
+  }
+  .asap-note.show { display: flex; }
+
+  .form-group { margin-bottom: 20px; }
+  .btn-row { display: flex; gap: 12px; margin-top: 24px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fade-up">
+  <h1 class="page-heading">Request a Change</h1>
+  <p class="page-subheading">Need a last-minute adjustment? Log your memo here and your coordinator will handle it promptly.</p>
 </div>
 
-<div class="card fade-up" style="padding:32px 36px;max-width:820px;">
-  <form method="POST" action="{{ url_for('portal.request_change') }}" novalidate>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    <input type="hidden" name="change_type" id="change_type_val" value="package"/>
-    <input type="hidden" name="urgency" id="urgency_val" value="normal"/>
+<div class="change-card fade-up d1">
+  <form method="POST" action="{{ url_for('portal.request_change') }}" id="changeForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="change_type" id="changeTypeInput" value="package_addon">
+    <input type="hidden" name="urgency" id="urgencyInput" value="normal">
 
-    <div class="field" style="margin-bottom:8px;">
-      <label>Change Type</label>
-    </div>
-    <div class="toggle-group" style="margin-bottom:24px;" id="change-type-group">
-      <button type="button" class="toggle-btn active-navy" onclick="setToggle('change-type-group','change_type_val',this,'package')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        Package / Add-on
-      </button>
-      <button type="button" class="toggle-btn" onclick="setToggle('change-type-group','change_type_val',this,'venue_date')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        Venue / Date
-      </button>
-      <button type="button" class="toggle-btn" onclick="setToggle('change-type-group','change_type_val',this,'theme')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-        Theme / Moodboard
-      </button>
-    </div>
-
-    <div class="field" style="margin-bottom:8px;">
-      <label>Urgency Level</label>
-    </div>
-    <div class="toggle-group" style="margin-bottom:24px;" id="urgency-group">
-      <button type="button" class="toggle-btn active-green" onclick="setToggle('urgency-group','urgency_val',this,'normal')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Normal
-      </button>
-      <button type="button" class="toggle-btn" onclick="setToggle('urgency-group','urgency_val',this,'urgent')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Urgent
-      </button>
-      <button type="button" class="toggle-btn" onclick="setToggle('urgency-group','urgency_val',this,'asap')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        ASAP
-      </button>
-    </div>
-
-    <div class="field">
-      <label>Describe Your Change Request</label>
-      <textarea name="description" rows="6" id="change-desc" placeholder="Please provide as much detail as possible — what needs to change, why, and any preferences for the new arrangement..."></textarea>
-    </div>
-
-    <div id="asap-warning" style="display:none;">
-      <div class="info-box">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Changes flagged as ASAP are escalated immediately to your coordinator and event director. Additional fees may apply for venue or date modifications.
+    <!-- Change type -->
+    <div class="form-group">
+      <div class="change-card-label">Change Type</div>
+      <div class="chip-group" id="changeTypeGroup">
+        <div class="chip-toggle selected" data-value="package_addon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          Package / Add-on
+        </div>
+        <div class="chip-toggle" data-value="venue_date">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Venue / Date
+        </div>
+        <div class="chip-toggle" data-value="theme_moodboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+          Theme / Moodboard
+        </div>
+        <div class="chip-toggle" data-value="other">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Other
+        </div>
       </div>
     </div>
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
-      <button type="submit" class="btn-gold">
+    <!-- Urgency -->
+    <div class="form-group">
+      <div class="change-card-label">Urgency Level</div>
+      <div class="chip-group" id="urgencyGroup">
+        <div class="chip-toggle chip-normal selected" data-value="normal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Normal
+        </div>
+        <div class="chip-toggle chip-urgent" data-value="urgent">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Urgent
+        </div>
+        <div class="chip-toggle chip-asap" data-value="asap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          ASAP
+        </div>
+      </div>
+    </div>
+
+    <!-- ASAP warning -->
+    <div class="asap-note" id="asapNote">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>Changes flagged as ASAP are escalated immediately to your coordinator and event director. Additional fees may apply for venue or date modifications.</span>
+    </div>
+
+    <!-- Description -->
+    <div class="form-group">
+      <label class="form-label">Describe Your Change Request</label>
+      <textarea name="description" class="form-control" rows="6"
+                placeholder="Please provide as much detail as possible — what needs to change, why, and any preferences for the new arrangement…" required></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button type="submit" class="btn btn-gold">
         Submit Memo
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
-      <button type="button" class="btn-ghost" onclick="document.getElementById('change-desc').value='';">Clear</button>
+      <button type="button" class="btn btn-outline" id="clearBtn">Clear</button>
     </div>
   </form>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-function setToggle(groupId, hiddenId, clickedBtn, value) {
-  const group = document.getElementById(groupId);
-  group.querySelectorAll('.toggle-btn').forEach(b => {
-    b.classList.remove('active-navy','active-green','active-gold');
+  // Change type chips
+  document.querySelectorAll('#changeTypeGroup .chip-toggle').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#changeTypeGroup .chip-toggle').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      document.getElementById('changeTypeInput').value = chip.dataset.value;
+    });
   });
-  if (groupId === 'urgency-group') {
-    const cls = value === 'normal' ? 'active-green' : value === 'asap' ? 'active-navy' : 'active-gold';
-    clickedBtn.classList.add(cls);
-    document.getElementById('asap-warning').style.display = value === 'asap' ? 'block' : 'none';
-  } else {
-    clickedBtn.classList.add('active-navy');
-  }
-  document.getElementById(hiddenId).value = value;
-}
+
+  // Urgency chips
+  document.querySelectorAll('#urgencyGroup .chip-toggle').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#urgencyGroup .chip-toggle').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      document.getElementById('urgencyInput').value = chip.dataset.value;
+      document.getElementById('asapNote').classList.toggle('show', chip.dataset.value === 'asap');
+    });
+  });
+
+  // Clear
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    document.querySelector('textarea[name="description"]').value = '';
+  });
 </script>
 {% endblock %}

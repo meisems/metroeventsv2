@@ -189,79 +189,109 @@ def _get_client_event(event_id: int) -> Event:
 @login_required
 @client_only
 def inquire():
+    """Client can submit a new event inquiry."""
+    submitted = False
     if request.method == "POST":
-        event_type   = request.form.get("event_type", "").strip()
-        pref_date    = request.form.get("preferred_date", "").strip()
-        venue        = request.form.get("venue", "").strip()
-        guest_count  = request.form.get("guest_count", "").strip()
-        budget_range = request.form.get("budget_range", "").strip()
-        notes        = request.form.get("notes", "").strip()
-
-        if not event_type:
-            flash("Please select an event type.", "warning")
-            return redirect(url_for("portal.inquire"))
-
-        # Log the inquiry as a flash for now; wire to a model/email as needed
-        flash(
-            f"Inquiry received! We'll reach out within 24 hours to discuss your "
-            f"{event_type.replace('_',' ').title()} event. Salamat!",
-            "success"
-        )
-        return redirect(url_for("portal.inquire"))
-
-    return render_template("portal/inquire.html")
+        # Log the inquiry as an event_log note or simply flash confirmation.
+        # Extend here to send email / create a meeting record as needed.
+        from models.event_log import EventLog
+        from models.client import Client
+        client = Client.query.filter_by(email=current_user.email).first()
+        flash("Your inquiry has been received! We'll reach out within 24 hours.", "success")
+        submitted = True
+    return render_template("portal/inquire.html", submitted=submitted)
 
 
-# ─── REQUEST CHANGE ────────────────────────────────────────────────────────
+# ─── REQUEST CHANGE ───────────────────────────────────────────────────────
 
-@portal_bp.route("/change", methods=["GET", "POST"])
+@portal_bp.route("/request-change", methods=["GET", "POST"])
 @login_required
 @client_only
 def request_change():
+    """Client can submit a change request memo."""
     if request.method == "POST":
-        change_type = request.form.get("change_type", "package")
-        urgency     = request.form.get("urgency", "normal")
-        description = request.form.get("description", "").strip()
+        change_type  = request.form.get("change_type", "other")
+        urgency      = request.form.get("urgency", "normal")
+        description  = request.form.get("description", "").strip()
 
         if not description:
-            flash("Please describe the change you need.", "warning")
+            flash("Please describe your change request.", "warning")
             return redirect(url_for("portal.request_change"))
 
-        flash(
-            f"Change request logged ({urgency.upper()}). Your coordinator will respond shortly.",
-            "success"
-        )
-        return redirect(url_for("portal.request_change"))
+        # Find the client's most recent active event and log the change request
+        from models.client import Client
+        from models.event_log import EventLog
+        client = Client.query.filter_by(email=current_user.email).first()
+        if client:
+            from models.event import Event
+            event = client.events.order_by(Event.event_date.desc()).first()
+            if event:
+                log = EventLog(
+                    event_id=event.id,
+                    log_type="change_request",
+                    message=f"[{urgency.upper()}] {change_type.replace('_',' ').title()}: {description}",
+                    logged_by=current_user.id,
+                )
+                db.session.add(log)
+                db.session.commit()
+
+        flash("Your change request has been submitted. Your coordinator will follow up promptly.", "success")
+        return redirect(url_for("portal.home"))
 
     return render_template("portal/request_change.html")
 
 
-# ─── REVIEW (portal tab wrapper for submit_feedback) ──────────────────────
+# ─── REVIEW ───────────────────────────────────────────────────────────────
 
-@portal_bp.route("/review")
+@portal_bp.route("/review", methods=["GET", "POST"])
 @login_required
 @client_only
 def review():
-    """Show the review form for the client's most recently completed event."""
+    """Client review / rating page — proxies to submit_feedback for completed events."""
     from models.client import Client
     from models.after_event import AfterEvent
-
     client = Client.query.filter_by(email=current_user.email).first()
-    event  = None
-    ae     = None
 
+    # Find the most recent completed event
+    from models.event import Event
+    event = None
+    ae    = None
     if client:
-        # Prefer completed events; fall back to most recent event
-        from models.event import Event
-        event = (
-            client.events
-            .filter(Event.status.in_(["done", "event_day"]))
-            .order_by(Event.event_date.desc())
-            .first()
-        ) or client.events.order_by(Event.event_date.desc()).first()
-
+        event = (client.events
+                 .filter(Event.status.in_(["done", "event_day"]))
+                 .order_by(Event.event_date.desc())
+                 .first())
         if event:
             ae = event.after_event or AfterEvent(event_id=event.id)
+
+    if request.method == "POST" and event:
+        def _int(key):
+            raw = request.form.get(key)
+            try:
+                return int(raw) if raw else None
+            except Exception:
+                return None
+
+        if not ae.id:
+            ae = AfterEvent(event_id=event.id)
+            db.session.add(ae)
+
+        ae.client_feedback       = request.form.get("client_feedback", "").strip()
+        ae.rating_overall        = _int("rating_overall")
+        ae.rating_design         = _int("rating_design")
+        ae.rating_coordination   = _int("rating_coordination")
+        ae.rating_on_time        = _int("rating_on_time")
+        ae.rating_crew           = _int("rating_crew")
+        ae.rating_value          = _int("rating_value")
+        ae.would_recommend       = request.form.get("would_recommend") == "1"
+        ae.allow_testimonial     = request.form.get("allow_testimonial") == "1"
+        ae.next_booking_interest = request.form.get("next_booking_interest") == "1"
+        ae.next_event_type       = request.form.get("next_event_type", "").strip() or None
+        ae.submitted_by_client   = True
+        db.session.commit()
+
+        flash("Salamat! Your review has been submitted. We truly appreciate it.", "success")
+        return redirect(url_for("portal.home"))
 
     return render_template("portal/review.html", event=event, ae=ae)
 
@@ -272,24 +302,15 @@ def review():
 @login_required
 @client_only
 def profile():
+    """Client profile settings."""
     if request.method == "POST":
-        name    = request.form.get("name", "").strip()
-        phone   = request.form.get("phone", "").strip()
-        address = request.form.get("address", "").strip()
-
-        if not name:
-            flash("Name cannot be empty.", "warning")
-            return redirect(url_for("portal.profile"))
-
-        current_user.name  = name
-        current_user.phone = phone or None
-
-        # Store address if the column exists on User model
-        if hasattr(current_user, "address"):
-            current_user.address = address or None
-
-        db.session.commit()
-        flash("Profile updated successfully.", "success")
+        action = request.form.get("action", "update_profile")
+        if action == "update_profile":
+            current_user.name  = request.form.get("name", "").strip() or current_user.name
+            current_user.email = request.form.get("email", "").strip() or current_user.email
+            current_user.phone = request.form.get("phone", "").strip() or None
+            db.session.commit()
+            flash("Profile updated successfully.", "success")
         return redirect(url_for("portal.profile"))
 
     return render_template("portal/profile.html")

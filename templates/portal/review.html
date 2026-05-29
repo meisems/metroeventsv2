@@ -1,120 +1,258 @@
-{% extends "portal/base_portal.html" %}
-{% set active_tab = "review" %}
+{% extends "portal/base.html" %}
 {% block title %}Leave a Review{% endblock %}
-{% block portal_content %}
-<div class="portal-page-head fade-up">
-  <h1 class="disp">Leave a Review</h1>
-  <p>How was your experience with {{ APP_NAME }}? Your feedback helps us do better for every client.</p>
+
+{% block head_extra %}
+<style>
+  .review-event-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: 20px 24px;
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 20px; box-shadow: var(--sh-sm);
+  }
+  .review-event-icon {
+    width: 48px; height: 48px; border-radius: var(--r-md);
+    background: var(--navy); display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .review-event-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; font-weight: 600; color: var(--navy); margin-bottom: 3px;
+  }
+  .review-event-meta { font-size: 13px; color: var(--ts); display: flex; gap: 12px; flex-wrap: wrap; }
+  .review-event-meta span { display: flex; align-items: center; gap: 4px; }
+
+  /* Rating card */
+  .rating-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-xl); padding: 32px;
+    box-shadow: var(--sh-sm); max-width: 680px;
+  }
+
+  /* Star rating */
+  .stars-overall {
+    display: flex; justify-content: center; gap: 8px;
+    margin: 16px 0 8px;
+  }
+  .star-btn {
+    background: none; border: none; cursor: pointer; padding: 4px;
+    color: #e5dfd2; transition: color var(--t-fast), transform var(--t-fast);
+    font-size: 0;
+  }
+  .star-btn:hover, .star-btn.active { color: var(--gold); }
+  .star-btn:hover { transform: scale(1.15); }
+  .star-btn svg { display: block; }
+  .stars-label {
+    text-align: center; font-size: 14px; color: var(--ts);
+    font-weight: 500; min-height: 20px; transition: color var(--t-base);
+  }
+  .stars-label.has-rating { color: var(--gold); }
+
+  /* Sub-ratings grid */
+  .sub-ratings { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
+  @media(max-width:560px){ .sub-ratings { grid-template-columns: 1fr; } }
+  .sub-rating-item { }
+  .sub-rating-label { font-size: 12px; font-weight: 600; color: var(--ts); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+  .sub-stars { display: flex; gap: 4px; }
+  .sub-star {
+    background: none; border: none; cursor: pointer; padding: 2px; color: #e5dfd2;
+    transition: color var(--t-fast);
+  }
+  .sub-star:hover, .sub-star.active { color: var(--gold); }
+
+  .form-group { margin-bottom: 20px; }
+  .checkbox-group { display: flex; flex-direction: column; gap: 10px; }
+  .checkbox-item { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: var(--tp); }
+  .checkbox-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
+
+  .submit-hint { font-size: 12px; color: var(--tm); margin-top: 10px; }
+
+  /* No event state */
+  .no-event-state {
+    text-align: center; padding: 56px 32px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-xl); box-shadow: var(--sh-sm);
+    max-width: 500px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fade-up">
+  <h1 class="page-heading">Leave a Review</h1>
+  <p class="page-subheading">How was your experience with Metro Events? Your feedback helps us do better for every client.</p>
 </div>
 
 {% if event %}
 <!-- Event being reviewed -->
-<div class="card fade-up" style="padding:20px 24px;margin-bottom:16px;">
-  <div style="font-size:11px;letter-spacing:.1em;color:var(--tm);margin-bottom:14px;">REVIEWING</div>
-  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-    <div style="width:44px;height:44px;background:var(--navy-lt);border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-lt)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-    </div>
-    <div style="flex:1;">
-      <div style="font-size:15px;font-weight:600;color:var(--tp);">{{ event.name }}</div>
-      <div style="font-size:12px;color:var(--tm);margin-top:3px;display:flex;align-items:center;gap:10px;">
-        <span>{{ event.event_date | dateformat }}</span>
-        {% if event.venue_name %}<span>{{ event.venue_name }}</span>{% endif %}
-      </div>
-    </div>
-    <span class="badge badge-green">Completed</span>
+<div class="review-event-card fade-up d1">
+  <div class="review-event-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b8924a" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
   </div>
+  <div style="flex:1;">
+    <div class="review-event-name">{{ event.name }}</div>
+    <div class="review-event-meta">
+      <span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        {{ event.event_date | dateformat }}
+      </span>
+      {% if event.venue_name %}
+      <span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        {{ event.venue_name }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+  <span class="badge badge-success">Completed</span>
 </div>
 
-<!-- Rating form -->
-<div class="card fade-up" style="padding:32px 36px;max-width:820px;">
-  <form method="POST" action="{{ url_for('portal.submit_feedback', event_id=event.id) }}" novalidate id="review-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    <input type="hidden" name="rating_overall" id="rating_overall_val" value="{{ ae.rating_overall or 0 }}"/>
+<div class="rating-card fade-up d2">
+  <form method="POST" action="{{ url_for('portal.review') }}" id="reviewForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="event_id" value="{{ event.id }}">
+    <input type="hidden" name="rating_overall" id="overallRatingInput" value="">
 
-    <!-- Star rating -->
-    <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-size:13px;font-weight:600;color:var(--ts);letter-spacing:.04em;margin-bottom:14px;">Overall Rating</div>
-      <div id="star-container" style="display:flex;justify-content:center;gap:8px;">
-        {% for i in range(1,6) %}
-        <button type="button" class="star-btn" data-val="{{ i }}" onclick="setRating({{ i }})"
-          style="background:none;border:none;cursor:pointer;padding:4px;transition:transform var(--t-fast);"
-          onmouseover="hoverRating({{ i }})" onmouseout="resetHover()">
-          <svg class="star-svg" width="36" height="36" viewBox="0 0 24 24" fill="{% if ae.rating_overall and i <= ae.rating_overall %}var(--gold){% else %}none{% endif %}" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        </button>
-        {% endfor %}
+    <!-- Overall stars -->
+    <div style="text-align:center;margin-bottom:6px;">
+      <div class="form-label" style="text-align:center;font-size:13px;letter-spacing:.05em;">Overall Rating</div>
+    </div>
+    <div class="stars-overall" id="overallStars">
+      {% for i in range(1, 6) %}
+      <button type="button" class="star-btn" data-val="{{ i }}" aria-label="{{ i }} star">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </button>
+      {% endfor %}
+    </div>
+    <div class="stars-label" id="starsLabel">Select a rating</div>
+
+    <!-- Sub-ratings -->
+    <div class="sub-ratings" style="margin-top:28px;">
+      {% set aspects = [
+        ('rating_design', 'Design & Styling'),
+        ('rating_coordination', 'Coordination'),
+        ('rating_on_time', 'On-Time Setup'),
+        ('rating_crew', 'Crew Professionalism'),
+        ('rating_value', 'Value for Money'),
+      ] %}
+      {% for field, label in aspects %}
+      <div class="sub-rating-item">
+        <div class="sub-rating-label">{{ label }}</div>
+        <div class="sub-stars" id="subStars_{{ field }}">
+          {% for i in range(1, 6) %}
+          <button type="button" class="sub-star" data-field="{{ field }}" data-val="{{ i }}" aria-label="{{ i }} stars">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </button>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="{{ field }}" id="{{ field }}_val" value="">
       </div>
-      <div id="rating-label" style="font-size:13px;color:var(--ts);margin-top:10px;min-height:20px;">
-        {% if ae.rating_overall %}{{ ['','Poor','Fair','Good','Great','Exceptional'][ae.rating_overall] }}{% else %}Click to rate{% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="form-group" style="margin-top:28px;">
+      <label class="form-label">Share Your Experience</label>
+      <textarea name="client_feedback" class="form-control" rows="5"
+                placeholder="Tell us about your event day — what exceeded your expectations, what memorable moments stood out, and anything our team did that made it special…">{{ ae.client_feedback if ae else '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <div class="checkbox-group">
+        <label class="checkbox-item">
+          <input type="checkbox" name="would_recommend" value="1" {% if ae and ae.would_recommend %}checked{% endif %}>
+          I would recommend Metro Events to friends and family
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" name="allow_testimonial" value="1" {% if ae and ae.allow_testimonial %}checked{% endif %}>
+          Allow Metro Events to feature my feedback on their website
+        </label>
+        <label class="checkbox-item">
+          <input type="checkbox" name="next_booking_interest" value="1" {% if ae and ae.next_booking_interest %}checked{% endif %}>
+          I'm interested in booking another event
+        </label>
       </div>
     </div>
 
-    <!-- Review textarea -->
-    <div class="field">
-      <label>Share Your Experience</label>
-      <textarea name="client_feedback" rows="6" placeholder="Tell us about your event day — what exceeded your expectations, what memorable moments stood out, and anything our team did that made it special...">{{ ae.client_feedback or '' }}</textarea>
-    </div>
-
-    <!-- Extra options -->
-    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px;">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ts);">
-        <input type="checkbox" name="would_recommend" value="1" {% if ae.would_recommend %}checked{% endif %} style="width:16px;height:16px;accent-color:var(--gold);"/> I would recommend {{ APP_NAME }}
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--ts);">
-        <input type="checkbox" name="allow_testimonial" value="1" {% if ae.allow_testimonial %}checked{% endif %} style="width:16px;height:16px;accent-color:var(--gold);"/> Allow use as public testimonial
-      </label>
-    </div>
-
-    <button type="submit" class="btn-gold" id="submit-review-btn">
+    <button type="submit" class="btn btn-gold" id="submitReviewBtn">
       Submit Review
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     </button>
-    <div id="rating-required-msg" style="font-size:12px;color:var(--ts);margin-top:10px;display:none;">Please select a star rating before submitting.</div>
+    <p class="submit-hint" id="ratingHint" style="display:none;">Please select a star rating before submitting.</p>
   </form>
 </div>
 
 {% else %}
-<div class="card fade-up" style="padding:48px 32px;text-align:center;max-width:820px;">
-  <div style="width:56px;height:56px;background:var(--overlay);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+<div class="no-event-state fade-up d1">
+  <div style="width:56px;height:56px;background:var(--overlay);border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ts)" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
   </div>
-  <h3 class="disp" style="font-size:22px;color:var(--tp);margin-bottom:8px;">No completed events yet</h3>
-  <p style="font-size:14px;color:var(--ts);">Reviews are available once your event is completed.</p>
+  <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--navy);margin-bottom:8px;">No Completed Events</div>
+  <p style="font-size:14px;color:var(--ts);">Feedback will be available after your event is completed. We look forward to hearing from you!</p>
 </div>
 {% endif %}
+{% endblock %}
 
+{% block scripts %}
 <script>
-const labels = ['','Poor','Fair','Good','Great','Exceptional'];
-let currentRating = {{ ae.rating_overall if ae and ae.rating_overall else 0 }};
+  const ratingLabels = ['', 'Needs Improvement', 'Fair', 'Good', 'Great', 'Exceptional'];
 
-function setRating(val) {
-  currentRating = val;
-  document.getElementById('rating_overall_val').value = val;
-  updateStars(val);
-  document.getElementById('rating-label').textContent = labels[val];
-  document.getElementById('rating-required-msg').style.display = 'none';
-}
-function hoverRating(val) { updateStars(val); document.getElementById('rating-label').textContent = labels[val]; }
-function resetHover() {
-  updateStars(currentRating);
-  document.getElementById('rating-label').textContent = currentRating ? labels[currentRating] : 'Click to rate';
-}
-function updateStars(val) {
-  document.querySelectorAll('.star-svg').forEach((s,i) => {
-    s.setAttribute('fill', i < val ? 'var(--gold)' : 'none');
+  // Overall rating
+  const overallStars = document.querySelectorAll('#overallStars .star-btn');
+  const overallInput = document.getElementById('overallRatingInput');
+  const starsLabel = document.getElementById('starsLabel');
+  let overallVal = 0;
+
+  overallStars.forEach(btn => {
+    btn.addEventListener('mouseenter', () => highlightOverall(+btn.dataset.val));
+    btn.addEventListener('mouseleave', () => highlightOverall(overallVal));
+    btn.addEventListener('click', () => {
+      overallVal = +btn.dataset.val;
+      overallInput.value = overallVal;
+      highlightOverall(overallVal);
+      starsLabel.classList.add('has-rating');
+      starsLabel.textContent = ratingLabels[overallVal];
+    });
   });
-}
-document.querySelectorAll('.star-btn').forEach(b => {
-  b.addEventListener('mouseover', function() { this.style.transform='scale(1.15)'; });
-  b.addEventListener('mouseout',  function() { this.style.transform='scale(1)'; });
-});
-document.getElementById('review-form').addEventListener('submit', function(e) {
-  if (!currentRating) {
-    e.preventDefault();
-    document.getElementById('rating-required-msg').style.display = 'block';
+
+  function highlightOverall(n) {
+    overallStars.forEach((s, i) => s.classList.toggle('active', i < n));
+    if (!overallVal) {
+      starsLabel.textContent = n ? ratingLabels[n] : 'Select a rating';
+      starsLabel.classList.toggle('has-rating', n > 0);
+    }
   }
-});
-// Init stars on load
-if (currentRating) updateStars(currentRating);
+
+  // Sub-ratings
+  document.querySelectorAll('.sub-star').forEach(btn => {
+    btn.addEventListener('mouseenter', () => highlightSub(btn.dataset.field, +btn.dataset.val));
+    btn.addEventListener('mouseleave', () => {
+      const cur = +document.getElementById(btn.dataset.field + '_val').value || 0;
+      highlightSub(btn.dataset.field, cur);
+    });
+    btn.addEventListener('click', () => {
+      const val = +btn.dataset.val;
+      document.getElementById(btn.dataset.field + '_val').value = val;
+      highlightSub(btn.dataset.field, val);
+    });
+  });
+
+  function highlightSub(field, n) {
+    document.querySelectorAll(`[data-field="${field}"]`).forEach((s, i) => {
+      s.classList.toggle('active', i < n);
+    });
+  }
+
+  // Validate on submit
+  document.getElementById('reviewForm')?.addEventListener('submit', e => {
+    if (!overallVal) {
+      e.preventDefault();
+      const hint = document.getElementById('ratingHint');
+      hint.style.display = 'block';
+      hint.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
 </script>
 {% endblock %}
