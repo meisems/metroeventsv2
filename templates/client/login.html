@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Client Portal — {{ APP_NAME }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --canvas:  #faf8f4; --surface: #ffffff;  --overlay: #f3efe8;
+      --navy:    #161c30; --navy-mid:#1e2640;  --navy-lt: #252d4a;
+      --gold:    #b8924a; --gold-lt: #d4aa6a;  --gold-pale:#f5edd8;
+      --tp:      #161c30; --ts:      #5a6070;  --tm:      #9ca3af;
+      --border:  #e5dfd2; --border-s:#c9bfa8;
+      --danger:  #b84a4a; --danger-pale:#fdf0f0;
+      --warn:    #b87a1a; --warn-pale:  #fdf4e6;
+      --success: #2d7d52; --success-pale:#eaf5ee;
+      --sh-xs: 0 1px 2px rgba(22,28,48,.04);
+      --sh-sm: 0 2px 8px rgba(22,28,48,.06),0 1px 2px rgba(22,28,48,.03);
+      --sh-md: 0 4px 16px rgba(22,28,48,.09),0 2px 4px rgba(22,28,48,.05);
+      --sh-lg: 0 12px 40px rgba(22,28,48,.13),0 4px 8px rgba(22,28,48,.06);
+      --r-sm:4px; --r-md:10px; --r-lg:16px; --r-xl:24px; --r-full:9999px;
+      --t-fast:110ms ease; --t-base:200ms ease; --t-slow:360ms ease;
+    }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family:'DM Sans',sans-serif;
+      background:var(--navy);
+      color:var(--tp);
+      -webkit-font-smoothing:antialiased;
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    .disp { font-family:'Cormorant Garamond',serif; }
+    input,select,textarea { font-family:'DM Sans',sans-serif; outline:none; }
+    button,a { transition:color var(--t-base),background-color var(--t-base),border-color var(--t-base),box-shadow var(--t-base),transform var(--t-base); }
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-track{background:var(--canvas)}
+    ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:99px}
+
+    @keyframes fadeUp   { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+    @keyframes floatY   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+    .fade-up { animation:fadeUp .55s ease both; }
+    .d1{animation-delay:.08s} .d2{animation-delay:.16s} .d3{animation-delay:.24s} .d4{animation-delay:.32s}
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .auth-wrap {
+      display:flex;
+      min-height:100vh;
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* ── Left decorative panel ──────────────────────────── */
+    .auth-left {
+      flex:1 1 420px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      padding:60px 5%;
+      position:relative;
+    }
+    .auth-left-bg {
+      position:absolute;
+      inset:0;
+      background:radial-gradient(ellipse 80% 70% at 30% 50%, rgba(184,146,74,.14) 0%, transparent 60%);
+      pointer-events:none;
+    }
+    .deco-ring {
+      border:1.5px solid var(--gold);
+      opacity:.13;
+      border-radius:50%;
+      position:absolute;
+      pointer-events:none;
+    }
+    .auth-left-inner {
+      position:relative;
+      z-index:1;
+      max-width:400px;
+      padding:0 40px;
+    }
+    .back-btn {
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      background:rgba(255,255,255,.07);
+      border:1px solid rgba(184,146,74,.25);
+      border-radius:var(--r-sm);
+      padding:7px 14px;
+      cursor:pointer;
+      color:rgba(248,244,237,.65);
+      font-size:12px;
+      font-weight:500;
+      font-family:'DM Sans',sans-serif;
+      letter-spacing:.03em;
+      text-decoration:none;
+      margin-bottom:48px;
+    }
+    .back-btn:hover { background:rgba(184,146,74,.14); color:rgba(248,244,237,.9); }
+    .back-btn svg { flex-shrink:0; }
+
+    .brand-row {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:40px;
+    }
+    .brand-icon {
+      width:38px; height:38px;
+      background:linear-gradient(135deg,var(--gold),var(--gold-lt));
+      border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+    .brand-name {
+      font-size:24px; font-weight:600; color:#f8f4ed;
+    }
+    .auth-left h2 {
+      font-size:clamp(30px,3.5vw,48px);
+      font-weight:600;
+      line-height:1.1;
+      color:#f8f4ed;
+      margin-bottom:18px;
+    }
+    .auth-left p.sub {
+      font-size:15px;
+      line-height:1.78;
+      color:rgba(248,244,237,.52);
+      margin-bottom:44px;
+    }
+    .feature-row {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:16px;
+    }
+    .feature-icon {
+      width:32px; height:32px;
+      background:rgba(184,146,74,.14);
+      border:1px solid rgba(184,146,74,.22);
+      border-radius:var(--r-md);
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+    .feature-label {
+      font-size:13px;
+      color:rgba(248,244,237,.58);
+    }
+
+    /* ── Right form panel ───────────────────────────────── */
+    .auth-right {
+      flex:0 0 490px;
+      background:var(--canvas);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      padding:60px 48px;
+      min-height:100vh;
+      position:relative;
+      z-index:2;
+    }
+
+    /* ── Tab switcher ───────────────────────────────────── */
+    .tab-bar {
+      display:flex;
+      background:var(--overlay);
+      border:1px solid var(--border);
+      border-radius:var(--r-md);
+      padding:4px;
+      margin-bottom:36px;
+      gap:0;
+    }
+    .tab-btn {
+      flex:1;
+      padding:9px 0;
+      border-radius:7px;
+      border:none;
+      cursor:pointer;
+      font-size:13px;
+      font-weight:600;
+      font-family:'DM Sans',sans-serif;
+      letter-spacing:.04em;
+      background:transparent;
+      color:var(--tm);
+      box-shadow:none;
+      transition:all var(--t-base);
+    }
+    .tab-btn.active {
+      background:var(--surface);
+      color:var(--tp);
+      box-shadow:var(--sh-xs);
+    }
+
+    /* ── Form panel ─────────────────────────────────────── */
+    .form-panel { display:none; animation:fadeUp .4s ease both; }
+    .form-panel.active { display:block; }
+
+    .form-panel h2 {
+      font-size:28px; font-weight:600; color:var(--tp); margin-bottom:6px;
+    }
+    .form-panel .form-sub {
+      font-size:14px; color:var(--ts); margin-bottom:28px;
+    }
+
+    /* ── Input field ────────────────────────────────────── */
+    .field { margin-bottom:16px; }
+    .field label {
+      display:block;
+      font-size:12px; font-weight:600;
+      color:var(--ts); letter-spacing:.04em;
+      margin-bottom:6px;
+    }
+    .field input {
+      width:100%;
+      padding:11px 14px;
+      background:var(--surface);
+      border:1.5px solid var(--border);
+      border-radius:var(--r-sm);
+      font-size:14px;
+      color:var(--tp);
+      transition:border-color var(--t-base), box-shadow var(--t-base);
+    }
+    .field input:focus {
+      border-color:var(--gold);
+      box-shadow:0 0 0 3px rgba(184,146,74,.14);
+    }
+    .field .pw-wrap { position:relative; }
+    .field .pw-toggle {
+      position:absolute; right:12px; top:50%; transform:translateY(-50%);
+      background:none; border:none; cursor:pointer; color:var(--tm);
+      display:flex; align-items:center; padding:0;
+    }
+    .field .pw-toggle:hover { color:var(--ts); }
+
+    .field-2col {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    @media(max-width:480px){ .field-2col{grid-template-columns:1fr;} }
+
+    /* ── Gold button ────────────────────────────────────── */
+    .gold-btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      width:100%;
+      padding:12px 26px;
+      background:linear-gradient(135deg,var(--gold),var(--gold-lt));
+      color:#fff;
+      font-size:14px; font-weight:500;
+      font-family:'DM Sans',sans-serif;
+      letter-spacing:.04em;
+      border:none;
+      border-radius:var(--r-sm);
+      cursor:pointer;
+    }
+    .gold-btn:hover {
+      transform:translateY(-1px);
+      box-shadow:0 6px 20px rgba(184,146,74,.36);
+    }
+
+    /* ── Alert / flash ──────────────────────────────────── */
+    .alert {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:9px 13px;
+      border-radius:var(--r-sm);
+      font-size:12px;
+      margin-bottom:16px;
+    }
+    .alert-danger  { background:var(--danger-pale);  border:1px solid rgba(184,74,74,.25);  color:var(--danger); }
+    .alert-warning { background:var(--warn-pale);    border:1px solid rgba(184,122,26,.25);  color:var(--warn); }
+    .alert-success { background:var(--success-pale); border:1px solid rgba(45,125,82,.25);   color:var(--success); }
+    .alert-info    { background:#eef4fb;             border:1px solid rgba(59,110,165,.22);  color:#3b6ea5; }
+
+    /* ── Info note box ──────────────────────────────────── */
+    .note-box {
+      margin-top:20px;
+      padding:14px;
+      background:var(--gold-pale);
+      border:1px solid rgba(184,146,74,.25);
+      border-radius:var(--r-md);
+      font-size:11px;
+      color:var(--ts);
+      line-height:1.65;
+      text-align:center;
+    }
+    .hint {
+      font-size:11px;
+      color:var(--tm);
+      text-align:center;
+      margin-top:14px;
+      line-height:1.6;
+    }
+    .hint a { color:var(--gold); text-decoration:none; }
+    .hint a:hover { text-decoration:underline; }
+
+    /* ── Mobile back btn ────────────────────────────────── */
+    .mobile-back {
+      display:none;
+      align-items:center;
+      gap:6px;
+      background:none;
+      border:none;
+      cursor:pointer;
+      color:var(--ts);
+      font-size:13px;
+      font-family:'DM Sans',sans-serif;
+      margin-bottom:28px;
+      padding:0;
+      text-decoration:none;
+    }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media(max-width:768px) {
+      .auth-left { display:none !important; }
+      .auth-right {
+        flex:1 1 100%;
+        padding:36px 24px 48px;
+        min-height:100vh;
+      }
+      .mobile-back { display:inline-flex; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-wrap">
+
+  <!-- ══ LEFT PANEL ══════════════════════════════════════════ -->
+  <div class="auth-left">
+    <div class="auth-left-bg"></div>
+    <!-- Deco rings -->
+    <div class="deco-ring" style="width:500px;height:500px;left:-150px;top:-150px;"></div>
+    <div class="deco-ring" style="width:240px;height:240px;left:-20px;top:0;"></div>
+
+    <div class="auth-left-inner">
+      <!-- Back to home -->
+      <a href="{{ url_for('public.index') }}" class="back-btn fade-up">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Home
+      </a>
+
+      <!-- Brand -->
+      <div class="brand-row fade-up d1">
+        <div class="brand-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        </div>
+        <span class="disp brand-name">{{ APP_NAME }}</span>
+      </div>
+
+      <!-- Headline -->
+      <h2 class="disp fade-up d2">Your Event Journey Continues Here</h2>
+      <p class="sub fade-up d3">Access your personalized client portal to track your event, submit requests, and stay in sync with our planning team.</p>
+
+      <!-- Feature list -->
+      <div class="fade-up d4">
+        {% for icon_path, label in [
+          ("M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", "Bank-level data security"),
+          ("M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0", "Real-time event updates"),
+          ("M8.21 13.89L7 23l5-3 5 3-1.21-9.12 M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z M20.5 3l-1 3M3.5 3l1 3", "Dedicated coordinator access"),
+          ("M13 2L3 14h9l-1 8 10-12h-9l1-8z", "24-hour response guarantee")
+        ] %}
+        <div class="feature-row">
+          <div class="feature-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ icon_path }}"/></svg>
+          </div>
+          <span class="feature-label">{{ label }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT FORM PANEL ════════════════════════════════════ -->
+  <div class="auth-right">
+
+    <!-- Mobile back button -->
+    <a href="{{ url_for('public.index') }}" class="mobile-back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to Home
+    </a>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Tab switcher -->
+    <div class="tab-bar" role="tablist">
+      <button class="tab-btn active" id="tab-login-btn"   onclick="switchTab('login')"    role="tab">Sign In</button>
+      <button class="tab-btn"        id="tab-register-btn" onclick="switchTab('register')"  role="tab">Create Account</button>
+    </div>
+
+    <!-- ── SIGN IN FORM ──────────────────────────────────── -->
+    <div class="form-panel active" id="panel-login">
+      <h2 class="disp">Welcome back</h2>
+      <p class="form-sub">Sign in to access your event portal.</p>
+
+      <form method="POST" action="{{ url_for('client_auth.login') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <div class="field">
+          <label for="login-email">Email Address</label>
+          <input type="email" id="login-email" name="email" placeholder="you@email.com" autocomplete="email" required/>
+        </div>
+
+        <div class="field" style="margin-bottom:20px;">
+          <label for="login-password">Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="login-password" name="password" placeholder="Enter your password" autocomplete="current-password" style="padding-right:44px;" required/>
+            <button type="button" class="pw-toggle" onclick="togglePw('login-password',this)" aria-label="Toggle password">
+              <svg id="eye-login" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div style="text-align:right;margin-top:6px;">
+            <a href="{{ url_for('client_auth.forgot_password') }}" style="font-size:12px;color:var(--gold);text-decoration:none;font-weight:500;">Forgot password?</a>
+          </div>
+        </div>
+
+        <button type="submit" class="gold-btn">
+          Sign In to Portal
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </form>
+
+      <div class="note-box">
+        Don't have an account yet? Your Metro Events coordinator will send you an activation link after your first consultation. Or <button onclick="switchTab('register')" style="background:none;border:none;cursor:pointer;color:var(--gold);font-weight:600;font-size:inherit;font-family:inherit;padding:0;">create one here.</button>
+      </div>
+    </div>
+
+    <!-- ── CREATE ACCOUNT FORM ──────────────────────────── -->
+    <div class="form-panel" id="panel-register">
+      <h2 class="disp">Create your account</h2>
+      <p class="form-sub">Set up your client portal in seconds.</p>
+
+      <form method="POST" action="{{ url_for('client_auth.register') }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <div class="field-2col">
+          <div class="field" style="margin-bottom:0;">
+            <label for="reg-name">Full Name</label>
+            <input type="text" id="reg-name" name="name" placeholder="Maria Santos" autocomplete="name" required/>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label for="reg-phone">Phone Number</label>
+            <input type="tel" id="reg-phone" name="phone" placeholder="+63 917 000 0000" autocomplete="tel"/>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="reg-email">Email Address</label>
+          <input type="email" id="reg-email" name="email" placeholder="you@email.com" autocomplete="email" required/>
+        </div>
+
+        <div class="field-2col">
+          <div class="field" style="margin-bottom:0;">
+            <label for="reg-password">Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="reg-password" name="password" placeholder="Min. 8 characters" autocomplete="new-password" style="padding-right:44px;" required/>
+              <button type="button" class="pw-toggle" onclick="togglePw('reg-password',this)" aria-label="Toggle password">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label for="reg-confirm">Confirm Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="reg-confirm" name="password_confirm" placeholder="Repeat password" autocomplete="new-password" style="padding-right:44px;" required/>
+              <button type="button" class="pw-toggle" onclick="togglePw('reg-confirm',this)" aria-label="Toggle password">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:8px;margin-bottom:20px;">
+          <button type="submit" class="gold-btn">
+            Create Account
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </form>
+
+      <p class="hint">
+        By creating an account you agree to our Terms of Service and Privacy Policy.<br/>
+        Already have one? <button onclick="switchTab('login')" style="background:none;border:none;cursor:pointer;color:var(--gold);font-weight:600;font-family:inherit;font-size:inherit;padding:0;">Sign in here.</button>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  /* ── Tab switcher ──────────────────────────────────────── */
+  function switchTab(tab) {
+    const panels = { login: 'panel-login', register: 'panel-register' };
+    const btns   = { login: 'tab-login-btn', register: 'tab-register-btn' };
+    Object.keys(panels).forEach(k => {
+      document.getElementById(panels[k]).classList.toggle('active', k === tab);
+      document.getElementById(btns[k]).classList.toggle('active', k === tab);
+    });
+  }
+
+  /* ── Password visibility toggle ────────────────────────── */
+  function togglePw(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    const isText = inp.type === 'text';
+    inp.type = isText ? 'password' : 'text';
+    btn.innerHTML = isText
+      ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+      : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+  }
+
+  /* ── Auto-switch tab if register redirected back with error ── */
+  {% if request.endpoint == 'client_auth.register' %}
+  switchTab('register');
+  {% endif %}
+</script>
+</body>
+</html>
