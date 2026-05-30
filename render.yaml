@@ -1,19 +1,21 @@
+# render.yaml — Infrastructure-as-code for Render
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Deploys metro-events-admin as a Render Web Service.
+# The app is built with Vite and served via `vite preview`.
+
 services:
   - type: web
-    name: metroevents
-    runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    name: metro-events-admin
+    runtime: node
+    region: singapore       # change to your preferred region
+    plan: free              # upgrade to starter/standard for production
+    buildCommand: npm install && npm run build
+    startCommand: npm run preview
     envVars:
-      - key: FLASK_CONFIG
-        value: production
-      - key: SECRET_KEY
-        generateValue: true
-      - key: DATABASE_URL
-        sync: false          # paste your Supabase DB URL in the Render dashboard
-      - key: SUPABASE_URL
+      - key: VITE_SUPABASE_URL
+        sync: false         # set manually in Render dashboard — never commit secrets
+      - key: VITE_SUPABASE_ANON_KEY
         sync: false
-      - key: SUPABASE_SERVICE_KEY
-        sync: false
-      - key: SUPABASE_BUCKET
-        value: metro-events
+      - key: NODE_VERSION
+        value: "20"
